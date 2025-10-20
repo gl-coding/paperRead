@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文文章阅读器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 英文文章阅读器</h1>
+            <p class="subtitle">阅读英文文章，轻松掌握词汇</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 文章内容区 -->
+            <div class="article-section">
+                <div class="article-header">
+                    <h2>文章内容</h2>
+                    <div class="controls">
+                        <button id="translateBtn" class="btn btn-success">🌏 显示中文翻译</button>
+                        <button id="clearBtn" class="btn btn-secondary">清空</button>
+                        <button id="loadSampleBtn" class="btn btn-primary">加载示例文章</button>
+                    </div>
+                </div>
+                <div class="article-input">
+                    <textarea id="articleInput" placeholder="在此粘贴或输入英文文章..."></textarea>
+                </div>
+                <div class="article-display" id="articleDisplay">
+                    <p class="placeholder-text">👆 请在上方输入框粘贴英文文章，或点击"加载示例文章"按钮</p>
+                </div>
+            </div>
+
+            <!-- 侧边栏 - 单词列表 -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3>📝 单词列表</h3>
+                    <div class="word-stats">
+                        <span id="wordCount">总词数: 0</span>
+                        <span id="uniqueWordCount">不同单词: 0</span>
+                    </div>
+                    <div class="annotation-controls">
+                        <!-- 标注模式 -->
+                        <div class="mode-section">
+                            <div class="annotation-mode">
+                                <label class="mode-toggle">
+                                    <input type="checkbox" id="annotationModeToggle">
+                                    <span class="toggle-label">📝 标注模式</span>
+                                </label>
+                            </div>
+                            <div class="color-picker" id="colorPicker" style="display: none;">
+                                <span class="picker-label">选择颜色：</span>
+                                <button class="color-btn" data-color="#ffc107" style="background: #ffc107;" title="黄色"></button>
+                                <button class="color-btn active" data-color="#28a745" style="background: #28a745;" title="绿色"></button>
+                                <button class="color-btn" data-color="#ff5722" style="background: #ff5722;" title="橙色"></button>
+                                <button class="color-btn" data-color="#2196f3" style="background: #2196f3;" title="蓝色"></button>
+                                <button class="color-btn" data-color="#9c27b0" style="background: #9c27b0;" title="紫色"></button>
+                                <button class="color-btn" data-color="#f44336" style="background: #f44336;" title="红色"></button>
+                            </div>
+                            <button id="clearAnnotationsBtn" class="btn-clear-annotations" style="display: none;">清除标注</button>
+                        </div>
+                        
+                        <!-- 翻译模式 -->
+                        <div class="mode-section">
+                            <div class="translation-mode">
+                                <label class="mode-toggle">
+                                    <input type="checkbox" id="translationModeToggle">
+                                    <span class="toggle-label">🌐 翻译模式</span>
+                                </label>
+                            </div>
+                            <button id="clearTranslationsBtn" class="btn-clear-translations" style="display: none;">清除翻译</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="wordSearch" placeholder="搜索单词...">
+                </div>
+                <div class="word-filter">
+                    <label>
+                        <input type="radio" name="filter" value="all" checked>
+                        全部
+                    </label>
+                    <label>
+                        <input type="radio" name="filter" value="alpha">
+                        A-Z排序
+                    </label>
+                    <label>
+                        <input type="radio" name="filter" value="frequency">
+                        按频率
+                    </label>
+                </div>
+                <div class="word-list" id="wordList">
+                    <p class="empty-state">暂无单词</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
