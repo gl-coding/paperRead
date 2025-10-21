@@ -41,8 +41,10 @@
         </nav>
 
         <div class="main-content">
-            <!-- 练习卡片 -->
-            <div class="dictation-card">
+            <!-- 左侧主要区域 -->
+            <div class="left-section">
+                <!-- 练习卡片 -->
+                <div class="dictation-card">
                 <!-- 进度条 -->
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
@@ -152,6 +154,48 @@
                     </div>
                 </div>
             </div>
+            </div>
+
+            <!-- 展开侧边栏按钮（隐藏时显示） -->
+            <button class="sidebar-expand-btn" id="sidebarExpandBtn" style="display: none;" title="展开侧边栏">
+                <span class="expand-icon">▶</span>
+                <span class="expand-text">词条</span>
+            </button>
+
+            <!-- 右侧边栏 -->
+            <aside class="right-sidebar" id="rightSidebar">
+                <!-- 切换按钮 -->
+                <button class="sidebar-toggle" id="sidebarToggle" title="收起侧边栏">
+                    <span class="toggle-icon">◀</span>
+                </button>
+                
+                <!-- 词条筛选 -->
+                <div class="sidebar-filter">
+                    <h3 class="sidebar-title">
+                        <span class="title-icon">📝</span>
+                        推荐词条
+                    </h3>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-type="all">
+                            全部 <span class="tab-count" id="allCount">25</span>
+                        </button>
+                        <button class="filter-tab" data-type="word">
+                            单词 <span class="tab-count" id="wordCount">10</span>
+                        </button>
+                        <button class="filter-tab" data-type="phrase">
+                            短语 <span class="tab-count" id="phraseCount">10</span>
+                        </button>
+                        <button class="filter-tab" data-type="sentence">
+                            句子 <span class="tab-count" id="sentenceCount">5</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 词条列表 -->
+                <div class="word-items-list" id="wordItemsList">
+                    <!-- 动态生成词条列表 -->
+                </div>
+            </aside>
         </div>
     </div>
 

@@ -4,6 +4,8 @@ let currentIndex = 0;
 let correctCount = 0;
 let wrongCount = 0;
 let isAnswered = false;
+let completedIndices = new Set(); // 记录已完成的题目
+let currentFilter = 'all'; // 当前筛选类型
 
 // 题库数据（添加音标）
 const questionBank = [
@@ -50,21 +52,39 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('hintBtn').addEventListener('click', showPhonetic);
     document.getElementById('speakBtn').addEventListener('click', speakEnglish);
     
+    // 筛选标签事件
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            currentFilter = this.dataset.type;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            renderWordList();
+        });
+    });
+    
     // 回车提交
     document.getElementById('answerInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !this.disabled && !isAnswered) {
             submitAnswer();
         }
     });
+    
+    // 初始化词条列表
+    initializeWordList();
+    
+    // 侧边栏切换事件
+    document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+    document.getElementById('sidebarExpandBtn').addEventListener('click', toggleSidebar);
 });
 
 // 开始练习
 function startPractice() {
-    // 打乱题目顺序
-    questions = shuffleArray([...questionBank]);
+    // 不打乱题目顺序，保持原始顺序
+    questions = [...questionBank];
     currentIndex = 0;
     correctCount = 0;
     wrongCount = 0;
+    completedIndices.clear();
     
     // 隐藏开始按钮，显示其他控件
     document.getElementById('startBtn').style.display = 'none';
@@ -76,6 +96,7 @@ function startPractice() {
     // 显示第一题
     showQuestion();
     updateStats();
+    updateWordListStatus();
 }
 
 // 显示题目
@@ -109,6 +130,9 @@ function showQuestion() {
     
     // 更新进度
     updateProgress();
+    
+    // 更新词条列表状态
+    updateWordListStatus();
     
     // 聚焦输入框
     document.getElementById('answerInput').focus();
@@ -175,6 +199,9 @@ function showFeedback(isCorrect, correctAnswer) {
 
 // 下一题
 function nextQuestion() {
+    // 标记当前题目为已完成
+    completedIndices.add(currentIndex);
+    
     currentIndex++;
     
     // 重置按钮显示
@@ -238,6 +265,7 @@ function restartPractice() {
     correctCount = 0;
     wrongCount = 0;
     isAnswered = false;
+    completedIndices.clear();
     
     // 重置UI
     document.getElementById('startBtn').style.display = 'inline-flex';
@@ -255,6 +283,7 @@ function restartPractice() {
     document.getElementById('progressText').textContent = '0 / 0';
     
     updateStats();
+    renderWordList();
 }
 
 // 显示音标
@@ -301,6 +330,112 @@ function speakEnglish() {
         }, 300);
     } else {
         alert('您的浏览器不支持语音朗读功能');
+    }
+}
+
+// 初始化词条列表
+function initializeWordList() {
+    questions = [...questionBank];
+    renderWordList();
+}
+
+// 渲染词条列表
+function renderWordList() {
+    const container = document.getElementById('wordItemsList');
+    container.innerHTML = '';
+    
+    const filteredQuestions = currentFilter === 'all' 
+        ? questions 
+        : questions.filter(q => q.type === currentFilter);
+    
+    filteredQuestions.forEach((question, originalIndex) => {
+        const actualIndex = questions.indexOf(question);
+        const entry = createWordEntry(question, actualIndex);
+        container.appendChild(entry);
+    });
+}
+
+// 创建词条项
+function createWordEntry(question, index) {
+    const entry = document.createElement('div');
+    entry.className = 'word-entry';
+    entry.dataset.index = index;
+    
+    // 判断状态
+    if (currentIndex === index) {
+        entry.classList.add('active');
+    }
+    if (completedIndices.has(index)) {
+        entry.classList.add('completed');
+    }
+    
+    const typeMap = {
+        'word': '单词',
+        'phrase': '短语',
+        'sentence': '句子'
+    };
+    
+    let statusHtml = '';
+    if (completedIndices.has(index)) {
+        statusHtml = '<div class="word-entry-status"><span class="status-icon">✓</span>已完成</div>';
+    } else if (currentIndex === index) {
+        statusHtml = '<div class="word-entry-status"><span class="status-icon">▶</span>进行中</div>';
+    }
+    
+    entry.innerHTML = `
+        <div class="word-entry-header">
+            <span class="word-entry-chinese">${question.chinese}</span>
+            <span class="word-entry-type">${typeMap[question.type]}</span>
+        </div>
+        ${statusHtml}
+    `;
+    
+    // 点击事件
+    entry.addEventListener('click', function() {
+        jumpToQuestion(index);
+    });
+    
+    return entry;
+}
+
+// 跳转到指定题目
+function jumpToQuestion(index) {
+    // 如果还没开始练习，先开始
+    if (document.getElementById('startBtn').style.display !== 'none') {
+        startPractice();
+    }
+    
+    currentIndex = index;
+    showQuestion();
+}
+
+// 更新词条列表状态
+function updateWordListStatus() {
+    renderWordList();
+    
+    // 滚动到当前题目
+    const activeEntry = document.querySelector('.word-entry.active');
+    if (activeEntry) {
+        activeEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// 切换侧边栏显示/隐藏
+function toggleSidebar() {
+    const sidebar = document.getElementById('rightSidebar');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    
+    sidebar.classList.toggle('hidden');
+    
+    if (sidebar.classList.contains('hidden')) {
+        expandBtn.style.display = 'flex';
+        toggleBtn.querySelector('.toggle-icon').textContent = '▶';
+        toggleBtn.title = '展开侧边栏';
+    } else {
+        expandBtn.style.display = 'none';
+        toggleBtn.querySelector('.toggle-icon').textContent = '◀';
+        toggleBtn.title = '收起侧边栏';
     }
 }
 
