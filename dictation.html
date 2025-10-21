@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词默写 - 英文文章阅读器</title>
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="dictation.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <nav class="top-navbar">
+            <div class="navbar-inner">
+                <div class="navbar-brand">
+                    <span class="brand-text"><span class="brand-dl">DL</span><span class="brand-page">Page</span></span>
+                </div>
+                <div class="navbar-menu">
+                    <a href="index.html" class="nav-item">
+                        <span class="nav-icon">📖</span>
+                        <span class="nav-text">阅读文章</span>
+                    </a>
+                    <a href="articles_manager.html" class="nav-item">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">文章列表</span>
+                    </a>
+                    <a href="words_graph.html" class="nav-item">
+                        <span class="nav-icon">🔗</span>
+                        <span class="nav-text">单词关系</span>
+                    </a>
+                    <a href="dictation.html" class="nav-item active">
+                        <span class="nav-icon">✍️</span>
+                        <span class="nav-text">单词默写</span>
+                    </a>
+                    <a href="profile.html" class="nav-item">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">个人中心</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- 练习卡片 -->
+            <div class="dictation-card">
+                <!-- 进度条 -->
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <span class="progress-text" id="progressText">0 / 0</span>
+                </div>
+
+                <!-- 题目类型标签 -->
+                <div class="type-badge" id="typeBadge">单词</div>
+
+                <!-- 题目内容 -->
+                <div class="question-container">
+                    <div class="question-icon">💭</div>
+                    <h2 class="chinese-text" id="chineseText">请点击"开始练习"</h2>
+                    
+                    <!-- 辅助工具 -->
+                    <div class="question-tools" id="questionTools" style="display: none;">
+                        <button class="tool-btn" id="hintBtn" title="显示音标">
+                            <span class="tool-icon">💡</span>
+                            <span class="tool-text">提示</span>
+                        </button>
+                        <button class="tool-btn" id="speakBtn" title="朗读英文">
+                            <span class="tool-icon">🔊</span>
+                            <span class="tool-text">朗读</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 音标显示 -->
+                    <div class="phonetic-display" id="phoneticDisplay" style="display: none;">
+                        <span class="phonetic-label">音标：</span>
+                        <span class="phonetic-text" id="phoneticText"></span>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="answerInput" 
+                        class="answer-input" 
+                        placeholder="请输入英文答案..."
+                        disabled
+                    >
+                    <button id="submitBtn" class="btn btn-submit" disabled>
+                        <span class="btn-icon">✓</span>
+                        <span class="btn-text">提交</span>
+                    </button>
+                </div>
+
+                <!-- 反馈信息 -->
+                <div class="feedback" id="feedback" style="display: none;">
+                    <div class="feedback-icon" id="feedbackIcon"></div>
+                    <div class="feedback-content">
+                        <p class="feedback-message" id="feedbackMessage"></p>
+                        <p class="correct-answer" id="correctAnswer"></p>
+                    </div>
+                </div>
+
+                <!-- 统计信息 -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">正确</span>
+                        <span class="stat-value correct" id="correctCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">错误</span>
+                        <span class="stat-value wrong" id="wrongCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">准确率</span>
+                        <span class="stat-value" id="accuracy">0%</span>
+                    </div>
+                </div>
+
+                <!-- 控制按钮 -->
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">开始练习</span>
+                    </button>
+                    <button id="nextBtn" class="btn btn-secondary" style="display: none;">
+                        <span class="btn-icon">→</span>
+                        <span class="btn-text">下一题</span>
+                    </button>
+                    <button id="skipBtn" class="btn btn-skip" style="display: none;">
+                        <span class="btn-icon">⤭</span>
+                        <span class="btn-text">跳过</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 完成提示 -->
+            <div class="completion-modal" id="completionModal" style="display: none;">
+                <div class="completion-content">
+                    <div class="completion-icon">🎉</div>
+                    <h2>练习完成！</h2>
+                    <div class="completion-stats">
+                        <p>总题数：<strong id="totalQuestions">0</strong></p>
+                        <p>正确数：<strong id="finalCorrect">0</strong></p>
+                        <p>错误数：<strong id="finalWrong">0</strong></p>
+                        <p>准确率：<strong id="finalAccuracy">0%</strong></p>
+                    </div>
+                    <div class="completion-buttons">
+                        <button id="restartBtn" class="btn btn-primary">
+                            <span class="btn-icon">🔄</span>
+                            <span class="btn-text">重新开始</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dictation.js"></script>
+</body>
+</html>
+

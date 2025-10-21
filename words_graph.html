@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词关系图 - 英文文章阅读器</title>
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="words_graph.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <nav class="top-navbar">
+            <div class="navbar-inner">
+                <div class="navbar-brand">
+                    <span class="brand-text"><span class="brand-dl">DL</span><span class="brand-page">Page</span></span>
+                </div>
+                <div class="navbar-menu">
+                    <a href="index.html" class="nav-item">
+                        <span class="nav-icon">📖</span>
+                        <span class="nav-text">阅读文章</span>
+                    </a>
+                    <a href="articles_manager.html" class="nav-item">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">文章列表</span>
+                    </a>
+                    <a href="words_graph.html" class="nav-item active">
+                        <span class="nav-icon">🔗</span>
+                        <span class="nav-text">单词关系</span>
+                    </a>
+                    <a href="dictation.html" class="nav-item">
+                        <span class="nav-icon">✍️</span>
+                        <span class="nav-text">单词默写</span>
+                    </a>
+                    <a href="profile.html" class="nav-item">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">个人中心</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- 左侧主要区域 -->
+            <div class="left-section">
+                <!-- 图例说明 -->
+                <div class="legend">
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-icon current-word-icon"></div>
+                            <span>当前单词</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon strength-high"></div>
+                            <span>高相关</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon strength-medium"></div>
+                            <span>中相关</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon strength-low"></div>
+                            <span>低相关</span>
+                        </div>
+                    </div>
+                    <button id="randomBtn" class="btn btn-random">
+                        <span class="btn-icon">🎲</span>
+                        <span class="btn-text">随机</span>
+                    </button>
+                </div>
+
+                <!-- 关系图容器 -->
+                <div class="graph-container">
+                    <canvas id="graphCanvas"></canvas>
+                    <div id="graphWords" class="graph-words"></div>
+                    <div class="placeholder" id="placeholder">
+                        <div class="placeholder-icon">🔗</div>
+                        <h3>单词关系可视化</h3>
+                        <p>从右侧单词列表选择一个单词</p>
+                        <p class="hint">或在搜索框中输入单词查看关系图</p>
+                    </div>
+                </div>
+
+                <!-- 单词详情面板 -->
+                <div class="word-details" id="wordDetails" style="display: none;">
+                    <div class="details-header">
+                        <h3 id="detailsWord">-</h3>
+                        <button class="close-btn" id="closeDetails">&times;</button>
+                    </div>
+                    <div class="details-content">
+                        <div class="detail-item">
+                            <span class="detail-label">词性：</span>
+                            <span class="detail-value" id="detailsPOS">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">释义：</span>
+                            <span class="detail-value" id="detailsMeaning">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">出现次数：</span>
+                            <span class="detail-value" id="detailsFreq">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">相关单词数：</span>
+                            <span class="detail-value" id="detailsRelated">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧边栏 -->
+            <aside class="right-sidebar">
+                <!-- 搜索框 -->
+                <div class="search-wrapper">
+                    <input type="text" id="wordSearch" placeholder="搜索单词" class="word-input">
+                    <button id="searchBtn" class="search-icon-btn" title="搜索">
+                        <span class="search-icon">🔍</span>
+                    </button>
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="sidebar-divider"></div>
+
+                <!-- 推荐单词列表 -->
+                <h3 class="sidebar-title">
+                    <span class="title-icon">📚</span>
+                    推荐单词
+                </h3>
+                <div class="word-list" id="wordList">
+                    <!-- 动态生成单词列表 -->
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="words_graph.js"></script>
+</body>
+</html>
+
