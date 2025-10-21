@@ -629,7 +629,22 @@ function showOfflineTranslation() {
 // 从URL加载文章
 async function loadArticleFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    const articleId = urlParams.get('article');
+    let articleId = urlParams.get('article');
+    
+    // 如果URL中没有指定文章ID，则加载第一篇文章
+    if (!articleId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/articles/?page_size=1`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    articleId = data.results[0].id;
+                }
+            }
+        } catch (error) {
+            console.error('获取默认文章失败:', error);
+        }
+    }
     
     if (articleId) {
         try {

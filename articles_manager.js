@@ -23,7 +23,6 @@ const uploadModal = document.getElementById('uploadModal');
 const deleteModal = document.getElementById('deleteModal');
 
 // 按钮
-const newArticleBtn = document.getElementById('newArticleBtn');
 const uploadFileBtn = document.getElementById('uploadFileBtn');
 const saveBtn = document.getElementById('saveBtn');
 const cancelBtn = document.getElementById('cancelBtn');
@@ -75,9 +74,6 @@ function setupEventListeners() {
     difficultyFilter.addEventListener('change', handleSearch);
     categoryFilter.addEventListener('change', handleSearch);
     clearFilterBtn.addEventListener('click', clearFilters);
-
-    // 新建文章
-    newArticleBtn.addEventListener('click', openNewArticleModal);
 
     // 上传文件
     uploadFileBtn.addEventListener('click', openUploadModal);

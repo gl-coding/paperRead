@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 英文文章阅读器</title>
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <nav class="top-navbar">
+            <div class="navbar-inner">
+                <div class="navbar-brand">
+                    <span class="brand-text"><span class="brand-dl">DL</span><span class="brand-page">Page</span></span>
+                </div>
+                <div class="navbar-menu">
+                    <a href="index.html" class="nav-item">
+                        <span class="nav-icon">📖</span>
+                        <span class="nav-text">阅读文章</span>
+                    </a>
+                    <a href="articles_manager.html" class="nav-item">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">文章列表</span>
+                    </a>
+                    <a href="profile.html" class="nav-item active">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">个人中心</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- 个人信息区 -->
+            <div class="profile-section">
+                <div class="profile-header">
+                    <div class="avatar">
+                        <span class="avatar-text">DL</span>
+                    </div>
+                    <div class="user-info">
+                        <h2 class="username">学习者</h2>
+                        <p class="user-desc">坚持每天阅读英文文章</p>
+                    </div>
+                </div>
+
+                <!-- 统计信息 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📖</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="articleCount">0</div>
+                            <div class="stat-label">文章总数</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="annotationCount">0</div>
+                            <div class="stat-label">标注单词</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="readingCount">0</div>
+                            <div class="stat-label">阅读次数</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔤</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalWords">0</div>
+                            <div class="stat-label">总词汇量</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能区 -->
+            <div class="actions-section">
+                <h3 class="section-title">快捷操作</h3>
+                <div class="action-cards">
+                    <button class="action-card" id="newArticleBtn">
+                        <div class="action-icon">✏️</div>
+                        <div class="action-content">
+                            <h4>写文章</h4>
+                            <p>创建新的英文文章</p>
+                        </div>
+                    </button>
+                    <button class="action-card" id="uploadArticleBtn">
+                        <div class="action-icon">📤</div>
+                        <div class="action-content">
+                            <h4>上传文章</h4>
+                            <p>从文件导入文章</p>
+                        </div>
+                    </button>
+                    <a href="articles_manager.html" class="action-card">
+                        <div class="action-icon">📚</div>
+                        <div class="action-content">
+                            <h4>文章管理</h4>
+                            <p>查看和管理所有文章</p>
+                        </div>
+                    </a>
+                    <button class="action-card" id="exportDataBtn">
+                        <div class="action-icon">💾</div>
+                        <div class="action-content">
+                            <h4>导出数据</h4>
+                            <p>导出学习记录和标注</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 最近阅读 -->
+            <div class="recent-section">
+                <h3 class="section-title">最近阅读</h3>
+                <div id="recentArticles" class="recent-list">
+                    <p class="empty-state">暂无阅读记录</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New/Edit Article Modal -->
+    <div id="articleModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新建文章</h2>
+                <button class="btn-close" onclick="closeArticleModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="articleForm">
+                    <div class="form-group">
+                        <label for="articleTitle">标题 *</label>
+                        <input type="text" id="articleTitle" required placeholder="输入文章标题">
+                    </div>
+                    <div class="form-group">
+                        <label for="articleContent">内容 *</label>
+                        <textarea id="articleContent" required placeholder="输入或粘贴英文文章内容" rows="15"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="articleCategory">分类</label>
+                            <input type="text" id="articleCategory" placeholder="如：科技、商业、文化">
+                        </div>
+                        <div class="form-group">
+                            <label for="articleDifficulty">难度</label>
+                            <select id="articleDifficulty">
+                                <option value="">选择难度</option>
+                                <option value="beginner">初级</option>
+                                <option value="intermediate">中级</option>
+                                <option value="advanced">高级</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="articleSource">来源</label>
+                        <input type="text" id="articleSource" placeholder="文章来源或URL">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeArticleModal()">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload File Modal -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>上传文章文件</h2>
+                <button class="btn-close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <p class="upload-text">拖拽文件到此处或点击上传</p>
+                    <p class="upload-hint">支持 .txt 文件</p>
+                    <input type="file" id="fileInput" accept=".txt" style="display: none;">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">选择文件</button>
+                </div>
+                <div id="uploadPreview" style="display: none;">
+                    <h4>文件预览</h4>
+                    <div class="form-group">
+                        <label for="uploadTitle">标题 *</label>
+                        <input type="text" id="uploadTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="uploadContent">内容</label>
+                        <textarea id="uploadContent" rows="10" readonly></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="uploadCategory">分类</label>
+                            <input type="text" id="uploadCategory">
+                        </div>
+                        <div class="form-group">
+                            <label for="uploadDifficulty">难度</label>
+                            <select id="uploadDifficulty">
+                                <option value="">选择难度</option>
+                                <option value="beginner">初级</option>
+                                <option value="intermediate">中级</option>
+                                <option value="advanced">高级</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="saveUploadedArticle()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+</html>
+
