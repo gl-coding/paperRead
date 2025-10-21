@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章管理 - 英文文章阅读器</title>
+    <link rel="stylesheet" href="articles_manager.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <nav class="top-navbar">
+            <div class="navbar-inner">
+                <div class="navbar-brand">
+                    <span class="brand-text"><span class="brand-dl">DL</span><span class="brand-page">Page</span></span>
+                </div>
+                <div class="navbar-menu">
+                    <a href="articles_manager.html" class="nav-item active">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">文章列表</span>
+                    </a>
+                    <button id="newArticleBtn" class="nav-item">
+                        <span class="nav-icon">✏️</span>
+                        <span class="nav-text">写文章</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- 搜索和筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-left">
+                    <div class="article-count-info">
+                        <span class="info-icon">ℹ️</span>
+                        <span id="articleCount" class="count-text">共 0 篇文章</span>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="搜索文章标题或内容...">
+                    <select id="difficultyFilter">
+                        <option value="">全部难度</option>
+                        <option value="beginner">初级</option>
+                        <option value="intermediate">中级</option>
+                        <option value="advanced">高级</option>
+                    </select>
+                    <select id="categoryFilter">
+                        <option value="">全部分类</option>
+                    </select>
+                    <button id="clearFilterBtn" class="btn btn-secondary">清除筛选</button>
+                </div>
+                <button id="uploadFileBtn" class="btn btn-success">
+                    📤 上传文件
+                </button>
+            </div>
+
+            <!-- 文章列表 -->
+            <div class="articles-section">
+                <div id="articlesList" class="articles-grid">
+                    <div class="loading">加载中...</div>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建/编辑文章模态框 -->
+    <div id="articleModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新建文章</h2>
+                <button class="modal-close" id="closeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="articleForm">
+                    <input type="hidden" id="articleId">
+                    
+                    <div class="form-group">
+                        <label for="articleTitle">标题 *</label>
+                        <input type="text" id="articleTitle" required placeholder="请输入文章标题">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="articleDifficulty">难度 *</label>
+                            <select id="articleDifficulty" required>
+                                <option value="beginner">初级</option>
+                                <option value="intermediate">中级</option>
+                                <option value="advanced">高级</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="articleCategory">分类</label>
+                            <input type="text" id="articleCategory" placeholder="如：Technology, Business">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="articleSource">来源</label>
+                        <input type="text" id="articleSource" placeholder="文章来源（可选）">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="articleContent">内容 *</label>
+                        <textarea id="articleContent" required rows="15" placeholder="请输入英文文章内容"></textarea>
+                        <div class="content-stats">
+                            <span id="wordCountDisplay">单词数: 0</span>
+                            <span id="charCountDisplay">字符数: 0</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传文件模态框 -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>上传文章文件</h2>
+                <button class="modal-close" id="closeUploadModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".txt,.md" style="display: none;">
+                    <div class="upload-placeholder">
+                        <div class="upload-icon">📄</div>
+                        <p>点击或拖拽文件到这里上传</p>
+                        <p class="upload-hint">支持 .txt 和 .md 文件</p>
+                    </div>
+                </div>
+                <div class="upload-preview" id="uploadPreview" style="display: none;">
+                    <h3>文件预览</h3>
+                    <div class="preview-info">
+                        <p><strong>文件名:</strong> <span id="fileName"></span></p>
+                        <p><strong>文件大小:</strong> <span id="fileSize"></span></p>
+                    </div>
+                    <textarea id="fileContentPreview" rows="10" readonly></textarea>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="uploadTitle">文章标题</label>
+                            <input type="text" id="uploadTitle" placeholder="自动从文件名生成">
+                        </div>
+                        <div class="form-group">
+                            <label for="uploadDifficulty">难度</label>
+                            <select id="uploadDifficulty">
+                                <option value="beginner">初级</option>
+                                <option value="intermediate">中级</option>
+                                <option value="advanced">高级</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="cancelUpload">取消</button>
+                        <button class="btn btn-primary" id="confirmUpload">确认上传</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>确认删除</h2>
+                <button class="modal-close" id="closeDeleteModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="delete-warning">⚠️ 确定要删除这篇文章吗？</p>
+                <p class="delete-hint">此操作不可恢复！</p>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" id="cancelDelete">取消</button>
+                    <button class="btn btn-danger" id="confirmDelete">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="articles_manager.js"></script>
+</body>
+</html>
+
