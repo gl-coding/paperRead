@@ -54,29 +54,6 @@
 
             <!-- 设置分类 -->
             <div class="settings-sections">
-                <!-- 基础设置 -->
-                <div class="settings-section">
-                    <div class="section-header">
-                        <div class="section-icon">🎨</div>
-                        <h2 class="section-title">界面设置</h2>
-                    </div>
-                    <div class="setting-items">
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <h3>主题模式</h3>
-                                <p>选择您偏好的主题外观</p>
-                            </div>
-                            <div class="setting-control">
-                                <select id="themeMode" class="setting-select">
-                                    <option value="light">浅色</option>
-                                    <option value="dark">深色</option>
-                                    <option value="auto">跟随系统</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 导航栏设置 -->
                 <div class="settings-section">
                     <div class="section-header">
@@ -133,6 +110,21 @@
                             </div>
                             <div class="setting-control">
                                 <input type="color" id="defaultColor" class="color-input" value="#28a745">
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h3>阅读区最多显示段落</h3>
+                                <p>设置文章阅读区最多显示的段落数量</p>
+                            </div>
+                            <div class="setting-control">
+                                <select id="maxParagraphs" class="setting-select">
+                                    <option value="2">2 段</option>
+                                    <option value="4">4 段</option>
+                                    <option value="6">6 段</option>
+                                    <option value="8" selected>8 段（默认）</option>
+                                    <option value="10">10 段</option>
+                                </select>
                             </div>
                         </div>
                         <div class="setting-item">

@@ -1,8 +1,8 @@
 // 设置管理
 document.addEventListener('DOMContentLoaded', function() {
     // 获取元素
-    const themeMode = document.getElementById('themeMode');
     const defaultColor = document.getElementById('defaultColor');
+    const maxParagraphs = document.getElementById('maxParagraphs');
     const autoSave = document.getElementById('autoSave');
     const clearCacheBtn = document.getElementById('clearCacheBtn');
     const exportDataBtn = document.getElementById('exportDataBtn');
@@ -14,17 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // 加载保存的设置
     loadSettings();
 
-    // 主题模式
-    themeMode.addEventListener('change', function() {
-        const theme = this.value;
-        saveSettings('theme', theme);
-        applyTheme(theme);
-    });
-
     // 默认标注颜色
     defaultColor.addEventListener('change', function() {
         const color = this.value;
         saveSettings('defaultColor', color);
+    });
+
+    // 最多显示段落数
+    maxParagraphs.addEventListener('change', function() {
+        const value = this.value;
+        saveSettings('maxParagraphs', value);
+        showNotification('段落显示设置已保存，刷新阅读页面生效');
     });
 
     // 自动保存
@@ -60,15 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 加载设置
 function loadSettings() {
-    const theme = localStorage.getItem('theme') || 'light';
     const defaultColor = localStorage.getItem('defaultColor') || '#28a745';
+    const maxParagraphs = localStorage.getItem('maxParagraphs') || '8';
     const autoSave = localStorage.getItem('autoSave') !== 'false';
 
-    document.getElementById('themeMode').value = theme;
     document.getElementById('defaultColor').value = defaultColor;
+    document.getElementById('maxParagraphs').value = maxParagraphs;
     document.getElementById('autoSave').checked = autoSave;
-
-    applyTheme(theme);
     
     // 加载导航栏设置
     loadNavSettings();
@@ -121,17 +119,11 @@ function saveSettings(key, value) {
     showNotification('设置已保存');
 }
 
-// 应用主题
-function applyTheme(theme) {
-    // 主题功能预留，后续实现
-    console.log('应用主题:', theme);
-}
-
 // 清除缓存
 function clearCache() {
     try {
         // 只清除特定的缓存项，保留设置
-        const keysToKeep = ['theme', 'defaultColor', 'autoSave'];
+        const keysToKeep = ['defaultColor', 'maxParagraphs', 'autoSave', 'navTabs'];
         const allKeys = Object.keys(localStorage);
         
         allKeys.forEach(key => {

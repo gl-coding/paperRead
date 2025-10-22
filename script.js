@@ -16,6 +16,12 @@ let wordTranslations = new Map(); // 存储单词翻译缓存 {word: translation
 let annotationsHidden = false; // 标注隐藏状态
 let translationsHidden = false; // 翻译隐藏状态
 
+// 分页相关变量
+let allParagraphs = []; // 存储所有段落
+let currentPage = 1; // 当前页码
+let totalPages = 1; // 总页数
+let paragraphsPerPage = 8; // 每页段落数
+
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
 const wordList = document.getElementById('wordList');
@@ -30,6 +36,10 @@ const translationModeToggle = document.getElementById('translationModeToggle');
 const colorPicker = document.getElementById('colorPicker');
 const colorBtns = document.querySelectorAll('.color-btn');
 const filterRadios = document.querySelectorAll('input[name="filter"]');
+const paginationControls = document.getElementById('paginationControls');
+const prevPageBtn = document.getElementById('prevPageBtn');
+const nextPageBtn = document.getElementById('nextPageBtn');
+const paginationInfo = document.getElementById('paginationInfo');
 
 // 示例文章
 const sampleArticle = `The Importance of Artificial Intelligence in Modern Society
@@ -69,6 +79,10 @@ colorBtns.forEach(btn => {
 filterRadios.forEach(radio => {
     radio.addEventListener('change', handleFilterChange);
 });
+
+// 分页按钮事件
+prevPageBtn.addEventListener('click', goToPreviousPage);
+nextPageBtn.addEventListener('click', goToNextPage);
 
 // 显示文章内容
 function displayArticleContent(text) {
@@ -130,11 +144,34 @@ function extractWords(text) {
 // 显示文章（将单词变为可点击）
 function displayArticle(text) {
     // 将文本按段落分割
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
+    allParagraphs = text.split('\n\n').filter(p => p.trim());
+    
+    // 获取每页段落数设置
+    paragraphsPerPage = parseInt(localStorage.getItem('maxParagraphs') || '8');
+    
+    // 计算总页数
+    totalPages = Math.ceil(allParagraphs.length / paragraphsPerPage);
+    
+    // 重置到第一页
+    currentPage = 1;
+    
+    // 显示当前页
+    displayCurrentPage();
+    
+    // 更新分页控件
+    updatePaginationControls();
+}
+
+// 显示当前页的段落
+function displayCurrentPage() {
+    // 计算当前页要显示的段落范围
+    const startIndex = (currentPage - 1) * paragraphsPerPage;
+    const endIndex = startIndex + paragraphsPerPage;
+    const displayParagraphs = allParagraphs.slice(startIndex, endIndex);
     
     articleDisplay.innerHTML = '';
     
-    paragraphs.forEach(paragraph => {
+    displayParagraphs.forEach(paragraph => {
         const p = document.createElement('p');
         
         // 将段落中的单词包装
@@ -167,6 +204,41 @@ function displayArticle(text) {
     // 恢复标注和翻译
     restoreAnnotations();
     restoreWordTranslations();
+    
+    // 滚动到顶部
+    articleDisplay.scrollTop = 0;
+}
+
+// 更新分页控件
+function updatePaginationControls() {
+    if (totalPages > 1) {
+        paginationControls.style.display = 'flex';
+        paginationInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+        
+        // 更新按钮状态
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+    } else {
+        paginationControls.style.display = 'none';
+    }
+}
+
+// 上一页
+function goToPreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        displayCurrentPage();
+        updatePaginationControls();
+    }
+}
+
+// 下一页
+function goToNextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        displayCurrentPage();
+        updatePaginationControls();
+    }
 }
 
 // 普通高亮模式
