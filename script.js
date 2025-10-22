@@ -3,7 +3,7 @@ const API_BASE_URL = 'http://localhost:8000/api';
 
 // 全局变量
 let wordsData = new Map(); // 存储单词及其频率
-let currentFilter = 'all';
+let currentFilter = 'annotated';
 let currentArticleText = ''; // 存储当前文章文本
 let currentArticleId = null; // 当前文章ID
 let translationCache = new Map(); // 缓存翻译结果
@@ -739,6 +739,9 @@ async function loadAnnotationsFromServer(articleId) {
             if (annotatedWords.size > 0) {
                 applyAnnotations();
             }
+            
+            // 更新侧边栏单词列表，确保按标注排序时标注词条置顶
+            updateWordList();
         }
     } catch (error) {
         console.error('加载标注失败:', error);
