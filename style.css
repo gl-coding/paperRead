@@ -189,6 +189,19 @@ body {
     padding: 2px 6px;
 }
 
+/* 隐藏标注状态 */
+.hide-annotations .word.annotated {
+    background: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* 隐藏翻译状态 */
+.hide-translations .word-translation {
+    display: none !important;
+}
+
 .word-translation {
     color: #ff9800;
     font-size: 0.9em;

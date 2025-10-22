@@ -6,6 +6,7 @@
     <title>单词默写 - 英文文章阅读器</title>
     <link rel="stylesheet" href="navbar.css">
     <link rel="stylesheet" href="dictation.css">
+    <script src="navbar-control.js"></script>
 </head>
 <body>
     <div class="container">
@@ -35,6 +36,10 @@
                     <a href="profile.html" class="nav-item">
                         <span class="nav-icon">👤</span>
                         <span class="nav-text">个人中心</span>
+                    </a>
+                    <a href="settings.html" class="nav-item">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">系统设置</span>
                     </a>
                 </div>
             </div>
@@ -80,16 +85,20 @@
 
                 <!-- 输入区域 -->
                 <div class="input-container">
-                    <input 
-                        type="text" 
-                        id="answerInput" 
-                        class="answer-input" 
-                        placeholder="请输入英文答案..."
-                        disabled
-                    >
+                    <div class="word-inputs" id="wordInputs">
+                        <!-- 动态生成多个下划线输入框 -->
+                    </div>
+                </div>
+                
+                <!-- 提交按钮 -->
+                <div class="submit-container">
+                    <button id="clearBtn" class="btn btn-clear" style="display: none;">
+                        <span class="btn-icon">🔄</span>
+                        <span class="btn-text">清空重答</span>
+                    </button>
                     <button id="submitBtn" class="btn btn-submit" disabled>
                         <span class="btn-icon">✓</span>
-                        <span class="btn-text">提交</span>
+                        <span class="btn-text">提交答案</span>
                     </button>
                 </div>
 

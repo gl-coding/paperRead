@@ -23,7 +23,6 @@ const uploadModal = document.getElementById('uploadModal');
 const deleteModal = document.getElementById('deleteModal');
 
 // 按钮
-const uploadFileBtn = document.getElementById('uploadFileBtn');
 const saveBtn = document.getElementById('saveBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const closeModal = document.getElementById('closeModal');
@@ -76,7 +75,6 @@ function setupEventListeners() {
     clearFilterBtn.addEventListener('click', clearFilters);
 
     // 上传文件
-    uploadFileBtn.addEventListener('click', openUploadModal);
     uploadArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     uploadArea.addEventListener('dragover', handleDragOver);

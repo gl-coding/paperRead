@@ -6,6 +6,7 @@
     <title>文章管理 - 英文文章阅读器</title>
     <link rel="stylesheet" href="navbar.css">
     <link rel="stylesheet" href="articles_manager.css">
+    <script src="navbar-control.js"></script>
 </head>
 <body>
     <div class="container">
@@ -36,6 +37,10 @@
                         <span class="nav-icon">👤</span>
                         <span class="nav-text">个人中心</span>
                     </a>
+                    <a href="settings.html" class="nav-item">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">系统设置</span>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -60,9 +65,6 @@
                     </select>
                     <button id="clearFilterBtn" class="btn btn-secondary">清除筛选</button>
                 </div>
-                <button id="uploadFileBtn" class="btn btn-success">
-                    📤 上传文件
-                </button>
             </div>
 
             <!-- 文章列表 -->

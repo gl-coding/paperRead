@@ -433,11 +433,138 @@ body {
 
 /* 输入区域 */
 .input-container {
+    margin-bottom: 25px;
+}
+
+.word-inputs {
     display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.word-input-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.word-check-mark {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+    animation: checkPop 0.3s ease;
+    z-index: 10;
+}
+
+@keyframes checkPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.word-input {
+    padding: 12px 16px;
+    border: none;
+    border-bottom: 3px solid #667eea;
+    background: transparent;
+    font-size: 1.3rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-width: 60px;
+    color: #333;
+}
+
+.word-input:focus {
+    outline: none;
+    border-bottom-color: #764ba2;
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.05);
+}
+
+.word-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.word-input.correct {
+    border-bottom-color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.word-input.incorrect {
+    border-bottom-color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+    color: #c62828;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.word-placeholder {
+    font-size: 0.85rem;
+    color: #999;
+    min-height: 20px;
+}
+
+.punctuation-mark {
+    display: inline-block;
+    font-size: 1.5rem;
+    color: #667eea;
+    font-weight: bold;
+    padding: 0 5px;
+    animation: float 2s ease-in-out infinite;
+}
+
+/* 提交按钮容器 */
+.submit-container {
+    display: flex;
+    justify-content: center;
     gap: 15px;
     margin-bottom: 25px;
 }
 
+.btn-clear {
+    background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
+    color: #333;
+}
+
+.btn-clear:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ff9033 0%, #ffd740 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 167, 81, 0.4);
+}
+
+/* 保留旧的输入框样式（兼容） */
 .answer-input {
     flex: 1;
     padding: 18px 24px;
@@ -802,6 +929,21 @@ body {
 
     .dictation-card {
         padding: 30px 20px;
+    }
+
+    .word-inputs {
+        gap: 10px;
+        padding: 5px;
+    }
+
+    .word-input {
+        font-size: 1.1rem;
+        padding: 10px 12px;
+        min-width: 50px;
+    }
+
+    .punctuation-mark {
+        font-size: 1.2rem;
     }
 
     .chinese-text {

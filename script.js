@@ -13,6 +13,8 @@ let translationMode = false; // 翻译模式开关
 let currentAnnotationColor = '#28a745'; // 当前选择的标注颜色（默认绿色）
 let translatedWords = new Set(); // 存储已翻译的单词
 let wordTranslations = new Map(); // 存储单词翻译缓存 {word: translation}
+let annotationsHidden = false; // 标注隐藏状态
+let translationsHidden = false; // 翻译隐藏状态
 
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
@@ -21,6 +23,8 @@ const wordCount = document.getElementById('wordCount');
 const uniqueWordCount = document.getElementById('uniqueWordCount');
 const translateBtn = document.getElementById('translateBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
+const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');
+const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');
 const annotationModeToggle = document.getElementById('annotationModeToggle');
 const translationModeToggle = document.getElementById('translationModeToggle');
 const colorPicker = document.getElementById('colorPicker');
@@ -45,6 +49,8 @@ Looking forward, the future of artificial intelligence appears boundless. As tec
 // 事件监听器
 translateBtn.addEventListener('click', handleTranslate);
 clearAllBtn.addEventListener('click', handleClearAll);
+toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);
+toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);
 annotationModeToggle.addEventListener('change', toggleAnnotationMode);
 translationModeToggle.addEventListener('change', toggleTranslationMode);
 
@@ -184,6 +190,11 @@ function toggleAnnotationMode(e) {
     annotationMode = e.target.checked;
     
     if (annotationMode) {
+        // 关闭翻译模式（互斥）
+        if (translationMode) {
+            translationMode = false;
+            translationModeToggle.checked = false;
+        }
         // 显示颜色选择器
         colorPicker.style.display = 'flex';
         // 移除所有普通高亮
@@ -200,11 +211,49 @@ function toggleAnnotationMode(e) {
 function toggleTranslationMode(e) {
     translationMode = e.target.checked;
     
-    if (!translationMode) {
+    if (translationMode) {
+        // 关闭标注模式（互斥）
+        if (annotationMode) {
+            annotationMode = false;
+            annotationModeToggle.checked = false;
+            // 隐藏颜色选择器
+            colorPicker.style.display = 'none';
+        }
+    } else {
         // 移除所有普通高亮
         document.querySelectorAll('.word.highlighted').forEach(el => {
             el.classList.remove('highlighted');
         });
+    }
+}
+
+// 切换标注显示/隐藏
+function toggleAnnotationsVisibility() {
+    annotationsHidden = !annotationsHidden;
+    
+    if (annotationsHidden) {
+        // 隐藏标注
+        articleDisplay.classList.add('hide-annotations');
+        toggleAnnotationsBtn.textContent = '显示标注';
+    } else {
+        // 显示标注
+        articleDisplay.classList.remove('hide-annotations');
+        toggleAnnotationsBtn.textContent = '隐藏标注';
+    }
+}
+
+// 切换翻译显示/隐藏
+function toggleTranslationsVisibility() {
+    translationsHidden = !translationsHidden;
+    
+    if (translationsHidden) {
+        // 隐藏翻译
+        articleDisplay.classList.add('hide-translations');
+        toggleTranslationsBtn.textContent = '显示翻译';
+    } else {
+        // 显示翻译
+        articleDisplay.classList.remove('hide-translations');
+        toggleTranslationsBtn.textContent = '隐藏翻译';
     }
 }
 
@@ -220,6 +269,9 @@ function toggleAnnotation(word) {
     
     // 更新显示
     applyAnnotations();
+    
+    // 更新侧边栏列表（重要：这样才能在"按标注"排序时更新顺序）
+    updateWordList();
     
     // 保存到服务器
     saveAnnotationsToServer();
@@ -348,13 +400,8 @@ function handleClearAll() {
         return;
     }
     
-    // 确认操作
+    // 检查是否有内容需要清除
     if (annotatedWords.size === 0 && translatedWords.size === 0) {
-        alert('当前没有标注或翻译需要清除');
-        return;
-    }
-    
-    if (!confirm('确定要清除所有标注和翻译吗？')) {
         return;
     }
     
@@ -375,8 +422,6 @@ function handleClearAll() {
     if (currentArticleId) {
         saveAnnotationsToServer();
     }
-    
-    alert('已清除所有标注和翻译');
 }
 
 // 更新侧边栏高亮
@@ -416,13 +461,25 @@ function updateWordList() {
     } else if (currentFilter === 'frequency') {
         sortedWords.sort((a, b) => b[1] - a[1]);
     } else if (currentFilter === 'annotated') {
-        // 按标注排序：已标注的单词排在前面
+        // 按标注排序：已标注的单词排在前面，最新标注的排在最前
+        // 获取标注单词的顺序（Map保持插入顺序）
+        const annotatedWordsArray = Array.from(annotatedWords.keys());
+        
         sortedWords.sort((a, b) => {
             const aAnnotated = annotatedWords.has(a[0]);
             const bAnnotated = annotatedWords.has(b[0]);
+            
             if (aAnnotated && !bAnnotated) return -1;
             if (!aAnnotated && bAnnotated) return 1;
-            // 如果都标注或都未标注，按字母顺序
+            
+            // 如果都已标注，按标注顺序排序（最新的在前）
+            if (aAnnotated && bAnnotated) {
+                const aIndex = annotatedWordsArray.indexOf(a[0]);
+                const bIndex = annotatedWordsArray.indexOf(b[0]);
+                return bIndex - aIndex; // 倒序，最新的（索引大的）在前
+            }
+            
+            // 如果都未标注，按字母顺序
             return a[0].localeCompare(b[0]);
         });
     }
