@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Article, ReadingHistory, Annotation
 from .serializers import (
@@ -100,6 +101,45 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         return Response({'status': 'annotations saved'})
+
+    @action(detail=True, methods=['get'])
+    def content_paginated(self, request, pk=None):
+        """分页获取文章内容（使用存储的段落数据）"""
+        article = self.get_object()
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 8))
+        
+        # 使用存储的段落数据（如果没有则实时分割并保存）
+        if not article.paragraphs or len(article.paragraphs) == 0:
+            # 兼容旧数据：实时分割并保存
+            paragraphs = [p.strip() for p in article.content.split('\n\n') if p.strip()]
+            article.paragraphs = paragraphs
+            article.paragraph_count = len(paragraphs)
+            article.save()
+        else:
+            paragraphs = article.paragraphs
+        
+        # 使用Django的分页器
+        paginator = Paginator(paragraphs, page_size)
+        
+        try:
+            page_obj = paginator.get_page(page)
+        except Exception:
+            page_obj = paginator.get_page(1)
+        
+        return Response({
+            'current_page': page,
+            'total_pages': paginator.num_pages,
+            'total_paragraphs': len(paragraphs),
+            'paragraphs': list(page_obj),
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            # 基本文章信息
+            'article_id': article.id,
+            'article_title': article.title,
+            'word_count': article.word_count,
+            'paragraph_count': article.paragraph_count
+        })
 
 
 class ReadingHistoryViewSet(viewsets.ReadOnlyModelViewSet):

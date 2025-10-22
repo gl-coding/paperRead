@@ -8,9 +8,9 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'content', 'source', 'difficulty',
-            'category', 'word_count', 'created_at', 'updated_at'
+            'category', 'word_count', 'paragraph_count', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['word_count', 'created_at', 'updated_at']
+        read_only_fields = ['word_count', 'paragraph_count', 'created_at', 'updated_at']
 
 
 class ArticleListSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'content_preview', 'source', 
-            'difficulty', 'category', 'word_count', 'created_at'
+            'difficulty', 'category', 'word_count', 'paragraph_count', 'created_at'
         ]
 
     def get_content_preview(self, obj):

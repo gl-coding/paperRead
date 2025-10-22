@@ -16,11 +16,11 @@ let wordTranslations = new Map(); // 存储单词翻译缓存 {word: translation
 let annotationsHidden = false; // 标注隐藏状态
 let translationsHidden = false; // 翻译隐藏状态
 
-// 分页相关变量
-let allParagraphs = []; // 存储所有段落
+// 分页相关变量（全部使用后端分页）
 let currentPage = 1; // 当前页码
 let totalPages = 1; // 总页数
 let paragraphsPerPage = 8; // 每页段落数
+let currentParagraphCount = 0; // 当前文章段落总数
 
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
@@ -84,31 +84,91 @@ filterRadios.forEach(radio => {
 prevPageBtn.addEventListener('click', goToPreviousPage);
 nextPageBtn.addEventListener('click', goToNextPage);
 
-// 显示文章内容
-function displayArticleContent(text) {
-    if (!text || !text.trim()) {
-        clearArticle();
-        return;
+// 加载文章内容（全部使用后端分页）
+async function loadArticleContent(articleId, page = 1) {
+    try {
+        paragraphsPerPage = parseInt(localStorage.getItem('maxParagraphs') || '8');
+        
+        const response = await fetch(
+            `${API_BASE_URL}/articles/${articleId}/content_paginated/?page=${page}&page_size=${paragraphsPerPage}`
+        );
+        
+        if (!response.ok) {
+            throw new Error('获取分页内容失败');
+        }
+        
+        const data = await response.json();
+        
+        // 更新分页信息
+        currentPage = data.current_page;
+        totalPages = data.total_pages;
+        
+        // 组装段落为文本
+        const text = data.paragraphs.join('\n\n');
+        currentArticleText = text;
+        
+        // 隐藏之前的翻译
+        hideTranslation();
+        
+        // 启用翻译按钮
+        translateBtn.disabled = false;
+        
+        // 提取单词（只提取当前页的单词）
+        extractWords(text);
+        
+        // 显示当前页内容
+        displayPagedContent(data.paragraphs);
+        
+        // 更新分页控件
+        updatePaginationControls();
+        
+        // 更新侧边栏
+        updateWordList();
+        updateStats();
+        
+    } catch (error) {
+        console.error('后端分页加载失败:', error);
+        alert('加载文章内容失败，请重试');
     }
+}
+
+// 显示分页内容
+function displayPagedContent(paragraphs) {
+    articleDisplay.innerHTML = '';
     
-    // 保存当前文章文本
-    currentArticleText = text;
+    paragraphs.forEach(paragraph => {
+        const p = document.createElement('p');
+        
+        // 将段落中的单词包装
+        const wrappedText = paragraph.replace(/\b[a-zA-Z]+\b/g, (word) => {
+            return `<span class="word" data-word="${word.toLowerCase()}">${word}</span>`;
+        });
+        
+        p.innerHTML = wrappedText;
+        articleDisplay.appendChild(p);
+    });
     
-    // 隐藏之前的翻译
-    hideTranslation();
+    // 为单词添加点击事件
+    document.querySelectorAll('.word').forEach(wordElement => {
+        wordElement.addEventListener('click', () => {
+            const word = wordElement.dataset.word;
+            
+            if (annotationMode) {
+                toggleAnnotation(word);
+            } else if (translationMode) {
+                toggleWordTranslation(word);
+            } else {
+                highlightWord(word);
+            }
+        });
+    });
     
-    // 启用翻译按钮
-    translateBtn.disabled = false;
+    // 恢复标注和翻译
+    restoreAnnotations();
+    restoreWordTranslations();
     
-    // 提取单词
-    extractWords(text);
-    
-    // 显示文章
-    displayArticle(text);
-    
-    // 更新侧边栏
-    updateWordList();
-    updateStats();
+    // 滚动到顶部
+    articleDisplay.scrollTop = 0;
 }
 
 // 清空文章
@@ -141,73 +201,7 @@ function extractWords(text) {
     });
 }
 
-// 显示文章（将单词变为可点击）
-function displayArticle(text) {
-    // 将文本按段落分割
-    allParagraphs = text.split('\n\n').filter(p => p.trim());
-    
-    // 获取每页段落数设置
-    paragraphsPerPage = parseInt(localStorage.getItem('maxParagraphs') || '8');
-    
-    // 计算总页数
-    totalPages = Math.ceil(allParagraphs.length / paragraphsPerPage);
-    
-    // 重置到第一页
-    currentPage = 1;
-    
-    // 显示当前页
-    displayCurrentPage();
-    
-    // 更新分页控件
-    updatePaginationControls();
-}
-
-// 显示当前页的段落
-function displayCurrentPage() {
-    // 计算当前页要显示的段落范围
-    const startIndex = (currentPage - 1) * paragraphsPerPage;
-    const endIndex = startIndex + paragraphsPerPage;
-    const displayParagraphs = allParagraphs.slice(startIndex, endIndex);
-    
-    articleDisplay.innerHTML = '';
-    
-    displayParagraphs.forEach(paragraph => {
-        const p = document.createElement('p');
-        
-        // 将段落中的单词包装
-        const wrappedText = paragraph.replace(/\b[a-zA-Z]+\b/g, (word) => {
-            return `<span class="word" data-word="${word.toLowerCase()}">${word}</span>`;
-        });
-        
-        p.innerHTML = wrappedText;
-        articleDisplay.appendChild(p);
-    });
-    
-    // 为单词添加点击事件
-    document.querySelectorAll('.word').forEach(wordElement => {
-        wordElement.addEventListener('click', () => {
-            const word = wordElement.dataset.word;
-            
-            if (annotationMode) {
-                // 标注模式：标注单词
-                toggleAnnotation(word);
-            } else if (translationMode) {
-                // 翻译模式：翻译单词
-                toggleWordTranslation(word);
-            } else {
-                // 普通模式：高亮单词
-                highlightWord(word);
-            }
-        });
-    });
-    
-    // 恢复标注和翻译
-    restoreAnnotations();
-    restoreWordTranslations();
-    
-    // 滚动到顶部
-    articleDisplay.scrollTop = 0;
-}
+// 前端分页函数已移除，全部使用后端分页
 
 // 更新分页控件
 function updatePaginationControls() {
@@ -227,8 +221,7 @@ function updatePaginationControls() {
 function goToPreviousPage() {
     if (currentPage > 1) {
         currentPage--;
-        displayCurrentPage();
-        updatePaginationControls();
+        loadArticleContent(currentArticleId, currentPage);
     }
 }
 
@@ -236,8 +229,7 @@ function goToPreviousPage() {
 function goToNextPage() {
     if (currentPage < totalPages) {
         currentPage++;
-        displayCurrentPage();
-        updatePaginationControls();
+        loadArticleContent(currentArticleId, currentPage);
     }
 }
 
@@ -781,7 +773,10 @@ async function loadArticleFromURL() {
             if (response.ok) {
                 const article = await response.json();
                 currentArticleId = article.id;
-                displayArticleContent(article.content);
+                currentParagraphCount = article.paragraph_count || 0;
+                
+                // 使用后端分页加载文章内容
+                await loadArticleContent(articleId, 1);
                 
                 // 加载用户的标注
                 await loadAnnotationsFromServer(articleId);

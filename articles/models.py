@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+import json
 
 
 class Article(models.Model):
@@ -19,6 +20,8 @@ class Article(models.Model):
     )
     category = models.CharField(max_length=50, blank=True, null=True, verbose_name='分类')
     word_count = models.IntegerField(default=0, verbose_name='单词数')
+    paragraph_count = models.IntegerField(default=0, verbose_name='段落数')
+    paragraphs = models.JSONField(default=list, blank=True, verbose_name='段落数据')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     is_active = models.BooleanField(default=True, verbose_name='是否启用')
@@ -33,11 +36,15 @@ class Article(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        # 自动计算单词数
+        # 自动计算单词数和段落数，并存储段落数据
         if self.content:
             import re
             words = re.findall(r'\b[a-zA-Z]+\b', self.content)
             self.word_count = len(words)
+            # 分割并存储段落
+            paragraphs_list = [p.strip() for p in self.content.split('\n\n') if p.strip()]
+            self.paragraph_count = len(paragraphs_list)
+            self.paragraphs = paragraphs_list  # 存储段落数组
         super().save(*args, **kwargs)
 
 
