@@ -9,10 +9,12 @@ let currentArticleId = null; // 当前文章ID
 let translationCache = new Map(); // 缓存翻译结果
 let annotatedWords = new Map(); // 存储标注的单词及其颜色 {word: color}
 let annotationMode = false; // 标注模式开关
+let sentenceAnnotationMode = false; // 句子标注模式开关
 let translationMode = false; // 翻译模式开关
 let currentAnnotationColor = '#28a745'; // 当前选择的标注颜色（默认绿色）
 let translatedWords = new Set(); // 存储已翻译的单词
 let wordTranslations = new Map(); // 存储单词翻译缓存 {word: translation}
+let annotatedSentences = new Map(); // 存储标注的句子 {sentenceId: color}
 let annotationsHidden = false; // 标注隐藏状态
 let translationsHidden = false; // 翻译隐藏状态
 
@@ -32,6 +34,7 @@ const clearAllBtn = document.getElementById('clearAllBtn');
 const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');
 const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');
 const annotationModeToggle = document.getElementById('annotationModeToggle');
+const sentenceAnnotationModeToggle = document.getElementById('sentenceAnnotationModeToggle');
 const translationModeToggle = document.getElementById('translationModeToggle');
 const colorPicker = document.getElementById('colorPicker');
 const colorBtns = document.querySelectorAll('.color-btn');
@@ -62,6 +65,7 @@ clearAllBtn.addEventListener('click', handleClearAll);
 toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);
 toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);
 annotationModeToggle.addEventListener('change', toggleAnnotationMode);
+sentenceAnnotationModeToggle.addEventListener('change', toggleSentenceAnnotationMode);
 translationModeToggle.addEventListener('change', toggleTranslationMode);
 
 // 颜色选择器事件
@@ -83,6 +87,21 @@ filterRadios.forEach(radio => {
 // 分页按钮事件
 prevPageBtn.addEventListener('click', goToPreviousPage);
 nextPageBtn.addEventListener('click', goToNextPage);
+
+// 保存阅读进度
+function saveReadingProgress(articleId, page) {
+    const username = getUsername();
+    const key = `reading_progress_${username}_${articleId}`;
+    localStorage.setItem(key, page.toString());
+}
+
+// 获取阅读进度
+function getReadingProgress(articleId) {
+    const username = getUsername();
+    const key = `reading_progress_${username}_${articleId}`;
+    const savedPage = localStorage.getItem(key);
+    return savedPage ? parseInt(savedPage) : 1;
+}
 
 // 加载文章内容（全部使用后端分页）
 async function loadArticleContent(articleId, page = 1) {
@@ -126,6 +145,9 @@ async function loadArticleContent(articleId, page = 1) {
         updateWordList();
         updateStats();
         
+        // 保存阅读进度
+        saveReadingProgress(articleId, currentPage);
+        
     } catch (error) {
         console.error('后端分页加载失败:', error);
         alert('加载文章内容失败，请重试');
@@ -136,25 +158,47 @@ async function loadArticleContent(articleId, page = 1) {
 function displayPagedContent(paragraphs) {
     articleDisplay.innerHTML = '';
     
+    let sentenceIdCounter = 0;
+    
     paragraphs.forEach(paragraph => {
         const p = document.createElement('p');
         
-        // 将段落中的单词包装
-        const wrappedText = paragraph.replace(/\b[a-zA-Z]+\b/g, (word) => {
-            return `<span class="word" data-word="${word.toLowerCase()}">${word}</span>`;
+        // 将段落按句子分割（按 . ! ? 等标点符号）
+        const sentences = splitIntoSentences(paragraph);
+        
+        let paragraphHTML = '';
+        sentences.forEach(sentence => {
+            if (sentence.trim()) {
+                const sentenceId = `sentence_${sentenceIdCounter++}`;
+                
+                // 将句子中的单词包装
+                const wrappedSentence = sentence.replace(/\b[a-zA-Z]+\b/g, (word) => {
+                    return `<span class="word" data-word="${word.toLowerCase()}">${word}</span>`;
+                });
+                
+                // 用span包装整个句子
+                paragraphHTML += `<span class="sentence" data-sentence-id="${sentenceId}">${wrappedSentence}</span>`;
+            }
         });
         
-        p.innerHTML = wrappedText;
+        p.innerHTML = paragraphHTML;
         articleDisplay.appendChild(p);
     });
     
     // 为单词添加点击事件
     document.querySelectorAll('.word').forEach(wordElement => {
-        wordElement.addEventListener('click', () => {
+        wordElement.addEventListener('click', (e) => {
             const word = wordElement.dataset.word;
             
             if (annotationMode) {
                 toggleAnnotation(word);
+            } else if (sentenceAnnotationMode) {
+                // 找到单词所在的句子
+                const sentenceElement = wordElement.closest('.sentence');
+                if (sentenceElement) {
+                    const sentenceId = sentenceElement.dataset.sentenceId;
+                    toggleSentenceAnnotation(sentenceId);
+                }
             } else if (translationMode) {
                 toggleWordTranslation(word);
             } else {
@@ -163,12 +207,37 @@ function displayPagedContent(paragraphs) {
         });
     });
     
+    // 加载句子标注
+    loadSentenceAnnotationsFromLocal();
+    
     // 恢复标注和翻译
     restoreAnnotations();
+    restoreSentenceAnnotations();
     restoreWordTranslations();
     
     // 滚动到顶部
     articleDisplay.scrollTop = 0;
+}
+
+// 将文本按句子分割
+function splitIntoSentences(text) {
+    // 按句子结束符分割（. ! ? ; :）后面跟空格或结尾
+    // 保留标点符号
+    const sentences = [];
+    const regex = /[^.!?;]+[.!?;]+\s*/g;
+    let match;
+    
+    while ((match = regex.exec(text)) !== null) {
+        sentences.push(match[0]);
+    }
+    
+    // 如果有剩余文本（没有结束符的）
+    const lastIndex = sentences.join('').length;
+    if (lastIndex < text.length) {
+        sentences.push(text.substring(lastIndex));
+    }
+    
+    return sentences.length > 0 ? sentences : [text];
 }
 
 // 清空文章
@@ -177,7 +246,8 @@ function clearArticle() {
     wordsData.clear();
     currentArticleText = '';
     currentArticleId = null;
-    annotatedWords.clear(); // 清空标注
+    annotatedWords.clear(); // 清空单词标注
+    annotatedSentences.clear(); // 清空句子标注
     translatedWords.clear(); // 清空翻译
     wordTranslations.clear(); // 清空翻译缓存
     hideTranslation();
@@ -254,7 +324,37 @@ function toggleAnnotationMode(e) {
     annotationMode = e.target.checked;
     
     if (annotationMode) {
-        // 关闭翻译模式（互斥）
+        // 关闭其他模式（互斥）
+        if (sentenceAnnotationMode) {
+            sentenceAnnotationMode = false;
+            sentenceAnnotationModeToggle.checked = false;
+        }
+        if (translationMode) {
+            translationMode = false;
+            translationModeToggle.checked = false;
+        }
+        // 显示颜色选择器
+        colorPicker.style.display = 'flex';
+        // 移除所有普通高亮
+        document.querySelectorAll('.word.highlighted').forEach(el => {
+            el.classList.remove('highlighted');
+        });
+    } else {
+        // 隐藏颜色选择器
+        colorPicker.style.display = 'none';
+    }
+}
+
+// 切换句子标注模式
+function toggleSentenceAnnotationMode(e) {
+    sentenceAnnotationMode = e.target.checked;
+    
+    if (sentenceAnnotationMode) {
+        // 关闭其他模式（互斥）
+        if (annotationMode) {
+            annotationMode = false;
+            annotationModeToggle.checked = false;
+        }
         if (translationMode) {
             translationMode = false;
             translationModeToggle.checked = false;
@@ -341,6 +441,23 @@ function toggleAnnotation(word) {
     saveAnnotationsToServer();
 }
 
+// 标注/取消标注句子
+function toggleSentenceAnnotation(sentenceId) {
+    if (annotatedSentences.has(sentenceId)) {
+        // 如果已标注，取消标注
+        annotatedSentences.delete(sentenceId);
+    } else {
+        // 标注句子，使用当前选择的颜色
+        annotatedSentences.set(sentenceId, currentAnnotationColor);
+    }
+    
+    // 更新显示
+    applySentenceAnnotations();
+    
+    // 保存到本地存储
+    saveSentenceAnnotationsToLocal();
+}
+
 // 应用标注样式
 function applyAnnotations() {
     // 移除所有标注样式
@@ -365,6 +482,82 @@ function applyAnnotations() {
 function restoreAnnotations() {
     if (annotatedWords.size > 0) {
         applyAnnotations();
+    }
+}
+
+// 应用句子标注样式
+function applySentenceAnnotations() {
+    // 移除所有句子标注样式
+    document.querySelectorAll('.sentence.sentence-annotated').forEach(el => {
+        el.classList.remove('sentence-annotated');
+        el.style.borderBottom = '';
+        el.style.backgroundColor = '';
+    });
+    
+    // 应用新的句子标注
+    annotatedSentences.forEach((color, sentenceId) => {
+        const sentenceElement = document.querySelector(`.sentence[data-sentence-id="${sentenceId}"]`);
+        if (sentenceElement) {
+            sentenceElement.classList.add('sentence-annotated');
+            // 使用下划线和淡背景色来标注句子
+            sentenceElement.style.borderBottom = `3px solid ${color}`;
+            // 添加半透明背景色
+            const rgbaColor = hexToRgba(color, 0.1);
+            sentenceElement.style.backgroundColor = rgbaColor;
+        }
+    });
+}
+
+// 恢复句子标注（在重新渲染文章后）
+function restoreSentenceAnnotations() {
+    if (annotatedSentences.size > 0) {
+        applySentenceAnnotations();
+    }
+}
+
+// 十六进制颜色转rgba
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// 保存句子标注到本地存储
+function saveSentenceAnnotationsToLocal() {
+    if (!currentArticleId) return;
+    
+    const username = getUsername();
+    const key = `sentence_annotations_${username}_${currentArticleId}_page${currentPage}`;
+    
+    const annotations = Array.from(annotatedSentences.entries()).map(([sentenceId, color]) => ({
+        sentenceId,
+        color
+    }));
+    
+    localStorage.setItem(key, JSON.stringify(annotations));
+}
+
+// 从本地存储加载句子标注
+function loadSentenceAnnotationsFromLocal() {
+    if (!currentArticleId) return;
+    
+    const username = getUsername();
+    const key = `sentence_annotations_${username}_${currentArticleId}_page${currentPage}`;
+    
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        try {
+            const annotations = JSON.parse(saved);
+            annotatedSentences.clear();
+            annotations.forEach(ann => {
+                annotatedSentences.set(ann.sentenceId, ann.color);
+            });
+        } catch (e) {
+            console.error('加载句子标注失败:', e);
+        }
+    } else {
+        annotatedSentences.clear();
     }
 }
 
@@ -465,13 +658,18 @@ function handleClearAll() {
     }
     
     // 检查是否有内容需要清除
-    if (annotatedWords.size === 0 && translatedWords.size === 0) {
+    if (annotatedWords.size === 0 && annotatedSentences.size === 0 && translatedWords.size === 0) {
         return;
     }
     
-    // 清除所有标注
+    // 清除所有单词标注
     annotatedWords.clear();
     applyAnnotations();
+    
+    // 清除所有句子标注
+    annotatedSentences.clear();
+    applySentenceAnnotations();
+    saveSentenceAnnotationsToLocal();
     
     // 清除所有翻译
     translatedWords.forEach(word => {
@@ -775,11 +973,19 @@ async function loadArticleFromURL() {
                 currentArticleId = article.id;
                 currentParagraphCount = article.paragraph_count || 0;
                 
-                // 使用后端分页加载文章内容
-                await loadArticleContent(articleId, 1);
+                // 获取上次阅读的页码
+                const savedPage = getReadingProgress(articleId);
+                
+                // 使用后端分页加载文章内容（跳转到上次阅读的页面）
+                await loadArticleContent(articleId, savedPage);
                 
                 // 加载用户的标注
                 await loadAnnotationsFromServer(articleId);
+                
+                // 如果不是第一页，显示提示
+                if (savedPage > 1) {
+                    showReadingProgressNotification(savedPage);
+                }
             } else {
                 console.error('加载文章失败');
             }
@@ -787,6 +993,43 @@ async function loadArticleFromURL() {
             console.error('加载文章失败:', error);
         }
     }
+}
+
+// 显示阅读进度恢复提示
+function showReadingProgressNotification(page) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">📖</span>
+            <div>
+                <div style="font-weight: bold; margin-bottom: 3px;">继续阅读</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">已跳转到第 ${page} 页</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    
+    // 3秒后自动消失
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentElement) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
 }
 
 // 从服务器加载标注

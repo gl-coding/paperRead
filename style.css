@@ -234,12 +234,44 @@ body {
     padding: 2px 6px;
 }
 
+/* 句子样式 */
+.sentence {
+    display: inline;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    padding: 2px 0;
+}
+
+/* 句子标注样式 */
+.sentence.sentence-annotated {
+    padding: 4px 2px;
+    margin: 0 -2px;
+    border-radius: 4px;
+    position: relative;
+}
+
+/* 句子标注时的单词样式 */
+.sentence.sentence-annotated .word {
+    font-weight: 500;
+}
+
+/* 句子标注悬停效果 */
+.sentence.sentence-annotated:hover {
+    opacity: 0.85;
+    cursor: pointer;
+}
+
 /* 隐藏标注状态 */
 .hide-annotations .word.annotated {
     background: transparent !important;
     color: inherit !important;
     box-shadow: none !important;
     padding: 0 !important;
+}
+
+.hide-annotations .sentence.sentence-annotated {
+    background: transparent !important;
+    border-bottom: none !important;
 }
 
 /* 隐藏翻译状态 */
@@ -552,6 +584,29 @@ body {
     .sidebar {
         position: static;
         max-height: 500px;
+    }
+}
+
+/* 阅读进度通知动画 */
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
     }
 }
 
