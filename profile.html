@@ -50,11 +50,29 @@
             <div class="profile-section">
                 <div class="profile-header">
                     <div class="avatar">
-                        <span class="avatar-text">DL</span>
+                        <span class="avatar-text" id="avatarText">DL</span>
                     </div>
                     <div class="user-info">
-                        <h2 class="username">学习者</h2>
+                        <h2 class="username" id="displayUsername">学习者</h2>
                         <p class="user-desc">坚持每天阅读英文文章</p>
+                        <button class="btn-edit-username" id="editUsernameBtn">
+                            <span>✏️</span> 编辑用户名
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 用户名编辑区域 -->
+                <div class="username-edit-section" id="usernameEditSection" style="display: none;">
+                    <div class="edit-header">
+                        <h3>设置用户名</h3>
+                        <p class="edit-desc">用户名用于区分不同用户的标注和学习数据</p>
+                    </div>
+                    <div class="edit-form">
+                        <input type="text" id="usernameInput" class="username-input" placeholder="请输入用户名（2-20个字符）" maxlength="20">
+                        <div class="edit-actions">
+                            <button class="btn btn-primary" id="saveUsernameBtn">保存</button>
+                            <button class="btn btn-secondary" id="cancelEditBtn">取消</button>
+                        </div>
                     </div>
                 </div>
 
@@ -230,6 +248,7 @@
         </div>
     </div>
 
+    <script src="user-manager.js"></script>
     <script src="profile.js"></script>
 </body>
 </html>

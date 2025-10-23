@@ -1,12 +1,96 @@
 // API配置
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// 更新用户显示（使用user-manager.js中的函数）
+function updateUserDisplay() {
+    const displayUsername = document.getElementById('displayUsername');
+    const avatarText = document.getElementById('avatarText');
+    
+    displayUsername.textContent = getDisplayName();
+    avatarText.textContent = getAvatarText();
+}
+
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
+    updateUserDisplay();
     loadStatistics();
     loadRecentArticles();
     setupEventListeners();
+    setupUsernameEditor();
 });
+
+// 设置用户名编辑器
+function setupUsernameEditor() {
+    const editBtn = document.getElementById('editUsernameBtn');
+    const editSection = document.getElementById('usernameEditSection');
+    const saveBtn = document.getElementById('saveUsernameBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const usernameInput = document.getElementById('usernameInput');
+    
+    // 编辑按钮
+    editBtn.addEventListener('click', () => {
+        editSection.style.display = 'block';
+        usernameInput.value = getUsername() || '';
+        usernameInput.focus();
+    });
+    
+    // 保存按钮
+    saveBtn.addEventListener('click', () => {
+        const newUsername = usernameInput.value.trim();
+        
+        if (!newUsername) {
+            alert('请输入用户名');
+            return;
+        }
+        
+        if (newUsername.length < 2 || newUsername.length > 20) {
+            alert('用户名长度应在2-20个字符之间');
+            return;
+        }
+        
+        setUsername(newUsername);
+        updateUserDisplay();
+        editSection.style.display = 'none';
+        
+        showNotification('用户名设置成功！你的标注数据已独立保存');
+    });
+    
+    // 取消按钮
+    cancelBtn.addEventListener('click', () => {
+        editSection.style.display = 'none';
+    });
+    
+    // 回车保存
+    usernameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveBtn.click();
+        }
+    });
+}
+
+// 显示通知
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
 
 // 设置事件监听
 function setupEventListeners() {

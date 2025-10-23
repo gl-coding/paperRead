@@ -20,6 +20,22 @@ def get_client_ip(request):
     return ip
 
 
+def get_user_identifier(request):
+    """获取用户标识（优先使用用户名，其次使用IP）"""
+    # 优先从查询参数获取用户名
+    username = request.query_params.get('username', None)
+    if username:
+        return username
+    
+    # 尝试从POST数据获取用户名
+    username = request.data.get('username', None)
+    if username:
+        return username
+    
+    # 降级使用IP地址（向后兼容）
+    return get_client_ip(request)
+
+
 class ArticleViewSet(viewsets.ModelViewSet):
     """文章视图集"""
     queryset = Article.objects.filter(is_active=True)
@@ -70,32 +86,32 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def annotations(self, request, pk=None):
-        """获取文章的标注"""
+        """获取文章的标注（支持用户名）"""
         article = self.get_object()
-        user_ip = get_client_ip(request)
+        user_identifier = get_user_identifier(request)
         
         annotations = Annotation.objects.filter(
             article=article,
-            user_ip=user_ip
+            user_ip=user_identifier
         )
         serializer = AnnotationSerializer(annotations, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def save_annotations(self, request, pk=None):
-        """保存标注"""
+        """保存标注（支持用户名）"""
         article = self.get_object()
-        user_ip = get_client_ip(request)
+        user_identifier = get_user_identifier(request)
         annotations_data = request.data.get('annotations', [])
         
         # 删除旧标注
-        Annotation.objects.filter(article=article, user_ip=user_ip).delete()
+        Annotation.objects.filter(article=article, user_ip=user_identifier).delete()
         
         # 保存新标注
         for ann in annotations_data:
             Annotation.objects.create(
                 article=article,
-                user_ip=user_ip,
+                user_ip=user_identifier,  # 虽然字段名是user_ip，但现在存储的是用户标识
                 word=ann['word'],
                 color=ann['color']
             )

@@ -792,7 +792,8 @@ async function loadArticleFromURL() {
 // 从服务器加载标注
 async function loadAnnotationsFromServer(articleId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/annotations/`);
+        const username = getUsername();
+        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/annotations/?username=${encodeURIComponent(username)}`);
         if (response.ok) {
             const annotations = await response.json();
             
@@ -820,18 +821,27 @@ async function saveAnnotationsToServer() {
     if (!currentArticleId) return;
     
     try {
+        const username = getUsername();
         const annotations = Array.from(annotatedWords.entries()).map(([word, color]) => ({
             word,
             color
         }));
         
-        await fetch(`${API_BASE_URL}/articles/${currentArticleId}/save_annotations/`, {
+        const response = await fetch(`${API_BASE_URL}/articles/${currentArticleId}/save_annotations/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ annotations })
+            body: JSON.stringify({ 
+                annotations,
+                username 
+            })
         });
+        
+        if (!response.ok) {
+            throw new Error('保存标注失败');
+        }
+        console.log('标注已保存');
     } catch (error) {
         console.error('保存标注失败:', error);
     }
