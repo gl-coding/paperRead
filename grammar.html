@@ -50,61 +50,6 @@
         </nav>
 
         <div class="main-content">
-            <!-- 文章内容区 -->
-            <div class="article-section">
-                <div class="article-header">
-                    <h2>文章内容</h2>
-                    <div class="controls">
-                        <button id="translateBtn" class="btn btn-success">翻译中文</button>
-                        <button id="clearAllBtn" class="btn btn-danger">清除格式</button>
-                        <button id="toggleAnnotationsBtn" class="btn btn-secondary">隐藏标注</button>
-                        <button id="toggleTranslationsBtn" class="btn btn-secondary">隐藏翻译</button>
-                        <div class="mode-toggles-row">
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="annotationModeToggle">
-                                <span class="toggle-label">单词标注</span>
-                            </label>
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="sentenceAnnotationModeToggle">
-                                <span class="toggle-label">句子标注</span>
-                            </label>
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="translationModeToggle">
-                                <span class="toggle-label">翻译模式</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="article-stats">
-                    <span id="wordCount">总词数: 0</span>
-                    <span class="stats-separator">•</span>
-                    <span id="uniqueWordCount">不同单词: 0</span>
-                </div>
-                <!-- 颜色选择器 -->
-                <div class="color-picker" id="colorPicker" style="display: none;">
-                    <span class="picker-label">选择颜色：</span>
-                    <button class="color-btn" data-color="#ffc107" style="background: #ffc107;" title="黄色"></button>
-                    <button class="color-btn active" data-color="#28a745" style="background: #28a745;" title="绿色"></button>
-                    <button class="color-btn" data-color="#ff5722" style="background: #ff5722;" title="橙色"></button>
-                    <button class="color-btn" data-color="#2196f3" style="background: #2196f3;" title="蓝色"></button>
-                    <button class="color-btn" data-color="#9c27b0" style="background: #9c27b0;" title="紫色"></button>
-                    <button class="color-btn" data-color="#f44336" style="background: #f44336;" title="红色"></button>
-                </div>
-                <div class="article-display" id="articleDisplay">
-                    <p class="placeholder-text">📚 请从文章列表选择文章开始阅读</p>
-                </div>
-                <!-- 分页控制 -->
-                <div class="pagination-controls" id="paginationControls" style="display: none;">
-                    <button id="prevPageBtn" class="btn btn-pagination">
-                        <span>← 上一页</span>
-                    </button>
-                    <span class="pagination-info" id="paginationInfo">第 1 页 / 共 1 页</span>
-                    <button id="nextPageBtn" class="btn btn-pagination">
-                        <span>下一页 →</span>
-                    </button>
-                </div>
-            </div>
-
             <!-- 侧边栏 - Tab切换 -->
             <aside class="sidebar">
                 <!-- Tab切换头部 -->
@@ -189,6 +134,61 @@
                     </div>
                 </div>
             </aside>
+
+            <!-- 文章内容区 -->
+            <div class="article-section">
+                <div class="article-header">
+                    <h2>文章内容</h2>
+                    <div class="controls">
+                        <button id="translateBtn" class="btn btn-success">翻译中文</button>
+                        <button id="clearAllBtn" class="btn btn-danger">清除格式</button>
+                        <button id="toggleAnnotationsBtn" class="btn btn-secondary">隐藏标注</button>
+                        <button id="toggleTranslationsBtn" class="btn btn-secondary">隐藏翻译</button>
+                        <div class="mode-toggles-row">
+                            <label class="mode-toggle">
+                                <input type="checkbox" id="annotationModeToggle">
+                                <span class="toggle-label">单词标注</span>
+                            </label>
+                            <label class="mode-toggle">
+                                <input type="checkbox" id="sentenceAnnotationModeToggle">
+                                <span class="toggle-label">句子标注</span>
+                            </label>
+                            <label class="mode-toggle">
+                                <input type="checkbox" id="translationModeToggle">
+                                <span class="toggle-label">翻译模式</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-stats">
+                    <span id="wordCount">总词数: 0</span>
+                    <span class="stats-separator">•</span>
+                    <span id="uniqueWordCount">不同单词: 0</span>
+                </div>
+                <!-- 颜色选择器 -->
+                <div class="color-picker" id="colorPicker" style="display: none;">
+                    <span class="picker-label">选择颜色：</span>
+                    <button class="color-btn" data-color="#ffc107" style="background: #ffc107;" title="黄色"></button>
+                    <button class="color-btn active" data-color="#28a745" style="background: #28a745;" title="绿色"></button>
+                    <button class="color-btn" data-color="#ff5722" style="background: #ff5722;" title="橙色"></button>
+                    <button class="color-btn" data-color="#2196f3" style="background: #2196f3;" title="蓝色"></button>
+                    <button class="color-btn" data-color="#9c27b0" style="background: #9c27b0;" title="紫色"></button>
+                    <button class="color-btn" data-color="#f44336" style="background: #f44336;" title="红色"></button>
+                </div>
+                <div class="article-display" id="articleDisplay">
+                    <p class="placeholder-text">📚 请从文章列表选择文章开始阅读</p>
+                </div>
+                <!-- 分页控制 -->
+                <div class="pagination-controls" id="paginationControls" style="display: none;">
+                    <button id="prevPageBtn" class="btn btn-pagination">
+                        <span>← 上一页</span>
+                    </button>
+                    <span class="pagination-info" id="paginationInfo">第 1 页 / 共 1 页</span>
+                    <button id="nextPageBtn" class="btn btn-pagination">
+                        <span>下一页 →</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
