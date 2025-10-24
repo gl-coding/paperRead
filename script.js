@@ -18,6 +18,14 @@ let annotatedSentences = new Map(); // 存储标注的句子 {sentenceId: color}
 let annotationsHidden = false; // 标注隐藏状态
 let translationsHidden = false; // 翻译隐藏状态
 
+// 朗读相关变量
+let readingSentences = []; // 当前页所有句子
+let currentReadingIndex = -1; // 当前朗读的句子索引
+let isReading = false; // 是否正在朗读
+let readingPaused = false; // 是否暂停
+let speechSynthesis = window.speechSynthesis;
+let currentUtterance = null;
+
 // 分页相关变量（全部使用后端分页）
 let currentPage = 1; // 当前页码
 let totalPages = 1; // 总页数
@@ -43,6 +51,16 @@ const paginationControls = document.getElementById('paginationControls');
 const prevPageBtn = document.getElementById('prevPageBtn');
 const nextPageBtn = document.getElementById('nextPageBtn');
 const paginationInfo = document.getElementById('paginationInfo');
+const tabBtns = document.querySelectorAll('.tab-btn');
+const sentenceList = document.getElementById('sentenceList');
+const sentencesCount = document.getElementById('sentencesCount');
+const readingSentenceList = document.getElementById('readingSentenceList');
+const playAllBtn = document.getElementById('playAllBtn');
+const pauseReadingBtn = document.getElementById('pauseReadingBtn');
+const stopReadingBtn = document.getElementById('stopReadingBtn');
+const readingRate = document.getElementById('readingRate');
+const rateValue = document.getElementById('rateValue');
+const readingProgress = document.getElementById('readingProgress');
 
 // 示例文章
 const sampleArticle = `The Importance of Artificial Intelligence in Modern Society
@@ -82,6 +100,26 @@ colorBtns.forEach(btn => {
 
 filterRadios.forEach(radio => {
     radio.addEventListener('change', handleFilterChange);
+});
+
+// Tab切换事件
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        switchTab(targetTab);
+    });
+});
+
+// 朗读控制事件
+playAllBtn.addEventListener('click', startReadingAll);
+pauseReadingBtn.addEventListener('click', togglePauseReading);
+stopReadingBtn.addEventListener('click', stopReading);
+readingRate.addEventListener('input', (e) => {
+    const rate = parseFloat(e.target.value);
+    rateValue.textContent = rate.toFixed(1) + 'x';
+    if (currentUtterance) {
+        currentUtterance.rate = rate;
+    }
 });
 
 // 分页按钮事件
@@ -144,6 +182,25 @@ async function loadArticleContent(articleId, page = 1) {
         // 更新侧边栏
         updateWordList();
         updateStats();
+        
+        // 清空朗读数据（换页后需要重新初始化）
+        // 注意：displayPagedContent中会自动加载句子标注
+        if (isReading) {
+            stopReading();
+        }
+        readingSentences = [];
+        
+        // 如果当前在句子tab，刷新句子列表
+        const sentencesTab = document.getElementById('sentencesTab');
+        if (sentencesTab && sentencesTab.classList.contains('active')) {
+            updateSentenceList();
+        }
+        
+        // 如果当前在朗读tab，刷新朗读列表
+        const readingTab = document.getElementById('readingTab');
+        if (readingTab && readingTab.classList.contains('active')) {
+            initReadingList();
+        }
         
         // 保存阅读进度
         saveReadingProgress(articleId, currentPage);
@@ -456,6 +513,12 @@ function toggleSentenceAnnotation(sentenceId) {
     
     // 保存到本地存储
     saveSentenceAnnotationsToLocal();
+    
+    // 如果句子tab是激活状态，更新句子列表
+    const sentencesTab = document.getElementById('sentencesTab');
+    if (sentencesTab && sentencesTab.classList.contains('active')) {
+        updateSentenceList();
+    }
 }
 
 // 应用标注样式
@@ -790,6 +853,100 @@ function updateStats() {
     uniqueWordCount.textContent = `不同单词: ${wordsData.size}`;
 }
 
+// Tab切换函数
+function switchTab(tabName) {
+    // 更新tab按钮状态
+    tabBtns.forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // 更新tab内容显示
+    const wordsTab = document.getElementById('wordsTab');
+    const sentencesTab = document.getElementById('sentencesTab');
+    const readingTab = document.getElementById('readingTab');
+    
+    // 移除所有active类
+    wordsTab.classList.remove('active');
+    sentencesTab.classList.remove('active');
+    readingTab.classList.remove('active');
+    
+    if (tabName === 'words') {
+        wordsTab.classList.add('active');
+    } else if (tabName === 'sentences') {
+        sentencesTab.classList.add('active');
+        // 切换到句子tab时更新句子列表
+        updateSentenceList();
+    } else if (tabName === 'reading') {
+        readingTab.classList.add('active');
+        // 切换到朗读tab时初始化朗读列表
+        initReadingList();
+    }
+}
+
+// 更新句子列表
+function updateSentenceList() {
+    if (annotatedSentences.size === 0) {
+        sentenceList.innerHTML = '<p class="empty-state">暂无标注的句子</p>';
+        sentencesCount.textContent = '已标注 0 个句子';
+        return;
+    }
+    
+    sentencesCount.textContent = `已标注 ${annotatedSentences.size} 个句子`;
+    
+    let html = '';
+    annotatedSentences.forEach((color, sentenceId) => {
+        const sentenceElement = document.querySelector(`.sentence[data-sentence-id="${sentenceId}"]`);
+        if (sentenceElement) {
+            const sentenceText = sentenceElement.textContent;
+            html += `
+                <div class="sentence-item" data-sentence-id="${sentenceId}">
+                    <div class="sentence-item-text">${sentenceText}</div>
+                    <div class="sentence-item-footer">
+                        <div class="sentence-item-color" style="background: ${color};" title="标注颜色"></div>
+                        <button class="sentence-item-delete" onclick="deleteSentenceAnnotation('${sentenceId}')">删除</button>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    sentenceList.innerHTML = html;
+    
+    // 为句子项添加点击事件（滚动到对应句子）
+    document.querySelectorAll('.sentence-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // 如果点击的是删除按钮，不触发滚动
+            if (e.target.classList.contains('sentence-item-delete')) {
+                return;
+            }
+            
+            const sentenceId = item.dataset.sentenceId;
+            const sentenceElement = document.querySelector(`.sentence[data-sentence-id="${sentenceId}"]`);
+            if (sentenceElement) {
+                sentenceElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 高亮闪烁效果
+                sentenceElement.style.animation = 'highlight-flash 1s ease';
+                setTimeout(() => {
+                    sentenceElement.style.animation = '';
+                }, 1000);
+            }
+        });
+    });
+}
+
+// 删除句子标注
+window.deleteSentenceAnnotation = function(sentenceId) {
+    annotatedSentences.delete(sentenceId);
+    applySentenceAnnotations();
+    saveSentenceAnnotationsToLocal();
+    updateSentenceList();
+}
+
 // 处理筛选变化
 function handleFilterChange(e) {
     currentFilter = e.target.value;
@@ -1088,6 +1245,213 @@ async function saveAnnotationsToServer() {
     } catch (error) {
         console.error('保存标注失败:', error);
     }
+}
+
+// ========== 朗读功能 ==========
+
+// 初始化朗读列表（获取当前页所有句子）
+function initReadingList() {
+    readingSentences = [];
+    
+    // 获取当前页面所有句子元素
+    const sentenceElements = document.querySelectorAll('.sentence');
+    sentenceElements.forEach((element, index) => {
+        const sentenceText = element.textContent.trim();
+        if (sentenceText) {
+            readingSentences.push({
+                index: index,
+                text: sentenceText,
+                element: element
+            });
+        }
+    });
+    
+    updateReadingList();
+}
+
+// 更新朗读句子列表UI
+function updateReadingList() {
+    if (readingSentences.length === 0) {
+        readingSentenceList.innerHTML = '<p class="empty-state">暂无句子</p>';
+        return;
+    }
+    
+    let html = '';
+    readingSentences.forEach((sentence, index) => {
+        const isCurrentClass = index === currentReadingIndex ? 'current' : '';
+        const isPlayedClass = index < currentReadingIndex && currentReadingIndex !== -1 ? 'played' : '';
+        html += `
+            <div class="reading-sentence-item ${isCurrentClass} ${isPlayedClass}" data-index="${index}">
+                <div class="reading-sentence-text">${sentence.text}</div>
+                <div class="reading-sentence-controls">
+                    <button class="reading-sentence-btn" onclick="readSingleSentence(${index})">
+                        🔊 朗读
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    readingSentenceList.innerHTML = html;
+}
+
+// 开始朗读所有句子
+function startReadingAll() {
+    if (readingSentences.length === 0) {
+        alert('当前页没有可朗读的句子');
+        return;
+    }
+    
+    isReading = true;
+    readingPaused = false;
+    currentReadingIndex = 0;
+    
+    // 更新按钮显示
+    playAllBtn.style.display = 'none';
+    pauseReadingBtn.style.display = 'flex';
+    stopReadingBtn.style.display = 'flex';
+    
+    // 开始朗读
+    readNextSentence();
+}
+
+// 朗读下一个句子
+function readNextSentence() {
+    if (!isReading || readingPaused || currentReadingIndex >= readingSentences.length) {
+        if (currentReadingIndex >= readingSentences.length) {
+            // 全部朗读完成
+            stopReading();
+            readingProgress.textContent = '✅ 朗读完成！';
+        }
+        return;
+    }
+    
+    const sentence = readingSentences[currentReadingIndex];
+    const rate = parseFloat(readingRate.value);
+    
+    // 更新进度
+    readingProgress.textContent = `正在朗读 ${currentReadingIndex + 1} / ${readingSentences.length}`;
+    
+    // 更新UI
+    updateReadingList();
+    
+    // 滚动到对应句子并高亮
+    if (sentence.element) {
+        sentence.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        sentence.element.style.animation = 'highlight-flash 2s ease infinite';
+    }
+    
+    // 创建语音
+    currentUtterance = new SpeechSynthesisUtterance(sentence.text);
+    currentUtterance.rate = rate;
+    currentUtterance.lang = 'en-US';
+    
+    currentUtterance.onend = () => {
+        // 移除高亮
+        if (sentence.element) {
+            sentence.element.style.animation = '';
+        }
+        
+        // 继续下一个句子
+        currentReadingIndex++;
+        readNextSentence();
+    };
+    
+    currentUtterance.onerror = (event) => {
+        console.error('朗读错误:', event);
+        if (sentence.element) {
+            sentence.element.style.animation = '';
+        }
+        currentReadingIndex++;
+        readNextSentence();
+    };
+    
+    speechSynthesis.speak(currentUtterance);
+}
+
+// 朗读单个句子
+window.readSingleSentence = function(index) {
+    const sentence = readingSentences[index];
+    if (!sentence) return;
+    
+    // 停止当前朗读
+    speechSynthesis.cancel();
+    
+    const rate = parseFloat(readingRate.value);
+    
+    // 滚动并高亮
+    if (sentence.element) {
+        sentence.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        sentence.element.style.animation = 'highlight-flash 2s ease infinite';
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(sentence.text);
+    utterance.rate = rate;
+    utterance.lang = 'en-US';
+    
+    utterance.onend = () => {
+        if (sentence.element) {
+            sentence.element.style.animation = '';
+        }
+    };
+    
+    utterance.onerror = () => {
+        if (sentence.element) {
+            sentence.element.style.animation = '';
+        }
+    };
+    
+    speechSynthesis.speak(utterance);
+}
+
+// 暂停/继续朗读
+function togglePauseReading() {
+    if (!isReading) return;
+    
+    readingPaused = !readingPaused;
+    
+    if (readingPaused) {
+        speechSynthesis.pause();
+        pauseReadingBtn.querySelector('.btn-text').textContent = '继续';
+        pauseReadingBtn.querySelector('.btn-icon').textContent = '▶️';
+        readingProgress.textContent = '⏸️ 已暂停';
+    } else {
+        speechSynthesis.resume();
+        pauseReadingBtn.querySelector('.btn-text').textContent = '暂停';
+        pauseReadingBtn.querySelector('.btn-icon').textContent = '⏸️';
+        readingProgress.textContent = `正在朗读 ${currentReadingIndex + 1} / ${readingSentences.length}`;
+        readNextSentence();
+    }
+}
+
+// 停止朗读
+function stopReading() {
+    isReading = false;
+    readingPaused = false;
+    speechSynthesis.cancel();
+    
+    // 移除所有高亮
+    document.querySelectorAll('.sentence').forEach(el => {
+        el.style.animation = '';
+    });
+    
+    // 重置索引
+    currentReadingIndex = -1;
+    
+    // 更新按钮显示
+    playAllBtn.style.display = 'flex';
+    pauseReadingBtn.style.display = 'none';
+    stopReadingBtn.style.display = 'none';
+    
+    // 重置暂停按钮文本
+    pauseReadingBtn.querySelector('.btn-text').textContent = '暂停';
+    pauseReadingBtn.querySelector('.btn-icon').textContent = '⏸️';
+    
+    // 更新进度
+    readingProgress.textContent = '等待播放...';
+    
+    // 更新列表
+    updateReadingList();
 }
 
 // 页面加载时的初始化
