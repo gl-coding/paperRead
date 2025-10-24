@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档管理 - PaperRead</title>
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="docs_manager.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-brand">📚 PaperRead</div>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">阅读</span>
+            </a>
+            <a href="articles_manager.html" class="nav-link">
+                <span class="nav-icon">📝</span>
+                <span class="nav-text">文章</span>
+            </a>
+            <a href="docs_manager.html" class="nav-link active">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">文档</span>
+            </a>
+            <a href="profile.html" class="nav-link">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">个人中心</span>
+            </a>
+            <a href="settings.html" class="nav-link">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-text">系统设置</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="docs-container">
+        <!-- 左侧目录树 -->
+        <aside class="sidebar-left">
+            <div class="sidebar-header">
+                <h2>📑 文档目录</h2>
+                <button class="btn-icon" id="addRootBtn" title="新增根目录">
+                    ➕
+                </button>
+            </div>
+            <div class="tree-container" id="treeContainer">
+                <!-- 目录树将在这里动态生成 -->
+            </div>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <main class="content-area">
+            <!-- 工具栏 -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <h1 class="doc-title" id="docTitle">选择或创建文档</h1>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn" id="editBtn" disabled>
+                        <span class="btn-icon">✏️</span>
+                        <span class="btn-text">编辑</span>
+                    </button>
+                    <button class="btn btn-primary" id="saveBtn" style="display: none;">
+                        <span class="btn-icon">💾</span>
+                        <span class="btn-text">保存</span>
+                    </button>
+                    <button class="btn" id="cancelBtn" style="display: none;">
+                        <span class="btn-icon">❌</span>
+                        <span class="btn-text">取消</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 文档内容显示区 -->
+            <div class="doc-view" id="docView">
+                <div class="welcome-message">
+                    <h2>👋 欢迎使用文档管理</h2>
+                    <p>在左侧创建或选择一个文档开始编辑</p>
+                    <ul>
+                        <li>📁 点击 ➕ 创建根目录</li>
+                        <li>📂 右键目录可以添加子目录</li>
+                        <li>📄 点击目录查看文档内容</li>
+                        <li>✏️ 点击编辑按钮开始编写文档</li>
+                        <li>📝 支持 Markdown 格式</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 文档编辑区 -->
+            <div class="doc-edit" id="docEdit" style="display: none;">
+                <textarea class="doc-editor" id="docEditor" placeholder="在这里编写 Markdown 内容..."></textarea>
+            </div>
+        </main>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu" style="display: none;">
+        <div class="menu-item" id="addChildBtn">
+            <span class="menu-icon">➕</span>
+            <span class="menu-text">添加子目录</span>
+        </div>
+        <div class="menu-item" id="renameBtn">
+            <span class="menu-icon">✏️</span>
+            <span class="menu-text">重命名</span>
+        </div>
+        <div class="menu-item menu-item-danger" id="deleteBtn">
+            <span class="menu-icon">🗑️</span>
+            <span class="menu-text">删除</span>
+        </div>
+    </div>
+
+    <!-- 引入 Marked.js (Markdown 渲染库) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script src="docs_manager.js"></script>
+    
+    <!-- 导航栏控制脚本 -->
+    <script>
+        // 应用自定义导航栏设置
+        (function() {
+            const settings = JSON.parse(localStorage.getItem('paperread_nav_settings') || '{}');
+            const hiddenTabs = settings.hiddenTabs || [];
+            
+            if (hiddenTabs.length > 0) {
+                const style = document.createElement('style');
+                style.textContent = hiddenTabs.map(tab => 
+                    `.nav-link[href="${tab}"] { display: none !important; }`
+                ).join('\n');
+                document.head.appendChild(style);
+            }
+        })();
+    </script>
+</body>
+</html>
+
