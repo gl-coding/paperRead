@@ -32,6 +32,9 @@ let totalPages = 1; // 总页数
 let paragraphsPerPage = 8; // 每页段落数
 let currentParagraphCount = 0; // 当前文章段落总数
 
+// 目录相关变量
+let catalogData = {}; // 存储文章目录数据 {category: [articles]}
+
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
 const wordList = document.getElementById('wordList');
@@ -61,6 +64,8 @@ const stopReadingBtn = document.getElementById('stopReadingBtn');
 const readingRate = document.getElementById('readingRate');
 const rateValue = document.getElementById('rateValue');
 const readingProgress = document.getElementById('readingProgress');
+const catalogTree = document.getElementById('catalogTree');
+const refreshCatalog = document.getElementById('refreshCatalog');
 
 // 示例文章
 const sampleArticle = `The Importance of Artificial Intelligence in Modern Society
@@ -888,16 +893,20 @@ function switchTab(tabName) {
     });
     
     // 更新tab内容显示
+    const catalogTab = document.getElementById('catalogTab');
     const wordsTab = document.getElementById('wordsTab');
     const sentencesTab = document.getElementById('sentencesTab');
     const readingTab = document.getElementById('readingTab');
     
     // 移除所有active类
+    if (catalogTab) catalogTab.classList.remove('active');
     wordsTab.classList.remove('active');
     sentencesTab.classList.remove('active');
     readingTab.classList.remove('active');
     
-    if (tabName === 'words') {
+    if (tabName === 'catalog') {
+        if (catalogTab) catalogTab.classList.add('active');
+    } else if (tabName === 'words') {
         wordsTab.classList.add('active');
     } else if (tabName === 'sentences') {
         sentencesTab.classList.add('active');
@@ -1505,12 +1514,138 @@ function stopReading() {
     updateReadingList();
 }
 
+// ============ 文章目录功能 ============
+
+// 加载文章目录
+async function loadCatalog() {
+    try {
+        catalogTree.innerHTML = '<p class="empty-state">加载中...</p>';
+        
+        const response = await fetch(`${API_BASE_URL}/articles/?page_size=100`);
+        
+        if (!response.ok) {
+            throw new Error('加载文章列表失败');
+        }
+        
+        const data = await response.json();
+        const articles = data.results || [];
+        
+        // 按类别分组
+        catalogData = {};
+        articles.forEach(article => {
+            const category = article.category || '未分类';
+            if (!catalogData[category]) {
+                catalogData[category] = [];
+            }
+            catalogData[category].push(article);
+        });
+        
+        // 渲染目录
+        displayCatalog();
+        
+    } catch (error) {
+        console.error('加载目录失败:', error);
+        catalogTree.innerHTML = '<p class="empty-state">加载失败，请刷新重试</p>';
+    }
+}
+
+// 显示文章目录
+function displayCatalog() {
+    if (Object.keys(catalogData).length === 0) {
+        catalogTree.innerHTML = '<p class="empty-state">暂无文章</p>';
+        return;
+    }
+    
+    let html = '';
+    
+    // 遍历每个类别
+    Object.keys(catalogData).sort().forEach(category => {
+        const articles = catalogData[category];
+        const categoryId = `category-${category.replace(/\s+/g, '-')}`;
+        
+        html += `
+            <div class="catalog-category">
+                <div class="category-header" onclick="toggleCategory('${categoryId}')">
+                    <span class="category-toggle" id="${categoryId}-toggle">▶</span>
+                    <span class="category-name">${category}</span>
+                    <span class="category-count">${articles.length}</span>
+                </div>
+                <div class="article-list" id="${categoryId}">
+        `;
+        
+        // 遍历该类别下的文章
+        articles.forEach(article => {
+            const isActive = currentArticleId === article.id ? 'active' : '';
+            html += `
+                <div class="article-item ${isActive}" onclick="selectArticle(${article.id})">
+                    <div class="article-title">${escapeHtml(article.title)}</div>
+                    <div class="article-meta">
+                        <span>📊 ${article.word_count || 0} 词</span>
+                        <span>📄 ${article.paragraph_count || 0} 段</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    catalogTree.innerHTML = html;
+}
+
+// 切换类别展开/收起
+function toggleCategory(categoryId) {
+    const list = document.getElementById(categoryId);
+    const toggle = document.getElementById(`${categoryId}-toggle`);
+    
+    if (list.classList.contains('expanded')) {
+        list.classList.remove('expanded');
+        toggle.classList.remove('expanded');
+    } else {
+        list.classList.add('expanded');
+        toggle.classList.add('expanded');
+    }
+}
+
+// 选择文章
+function selectArticle(articleId) {
+    // 更新当前文章ID
+    currentArticleId = articleId;
+    
+    // 更新活动状态
+    document.querySelectorAll('.article-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.closest('.article-item').classList.add('active');
+    
+    // 加载文章内容
+    loadArticleContent(articleId, 1);
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 刷新目录按钮事件
+if (refreshCatalog) {
+    refreshCatalog.addEventListener('click', loadCatalog);
+}
+
 // 页面加载时的初始化
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('英文文章阅读器已加载');
+    console.log('英语语法页面已加载');
     
     // 初始禁用翻译按钮
     translateBtn.disabled = true;
+    
+    // 加载文章目录
+    await loadCatalog();
     
     // 从URL加载文章
     await loadArticleFromURL();

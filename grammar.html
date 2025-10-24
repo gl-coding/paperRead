@@ -54,7 +54,11 @@
             <aside class="sidebar">
                 <!-- Tab切换头部 -->
                 <div class="sidebar-tabs">
-                    <button class="tab-btn active" data-tab="words">
+                    <button class="tab-btn active" data-tab="catalog">
+                        <span class="tab-icon">📚</span>
+                        <span class="tab-text">目录</span>
+                    </button>
+                    <button class="tab-btn" data-tab="words">
                         <span class="tab-icon">📝</span>
                         <span class="tab-text">单词</span>
                     </button>
@@ -68,8 +72,18 @@
                     </button>
                 </div>
 
+                <!-- 目录Tab内容 -->
+                <div class="tab-content active" id="catalogTab">
+                    <div class="catalog-header">
+                        <button id="refreshCatalog" class="btn-refresh" title="刷新目录">🔄 刷新</button>
+                    </div>
+                    <div class="catalog-tree" id="catalogTree">
+                        <p class="empty-state">加载中...</p>
+                    </div>
+                </div>
+
                 <!-- 单词Tab内容 -->
-                <div class="tab-content active" id="wordsTab">
+                <div class="tab-content" id="wordsTab">
                     <div class="word-filter">
                         <label>
                             <input type="radio" name="filter" value="annotated" checked>
