@@ -50,104 +50,20 @@
         </nav>
 
         <div class="main-content">
-            <!-- 侧边栏 - Tab切换 -->
+            <!-- 侧边栏 - 目录 -->
             <aside class="sidebar">
-                <!-- Tab切换头部 -->
-                <div class="sidebar-tabs">
-                    <button class="tab-btn active" data-tab="catalog">
-                        <span class="tab-icon">📚</span>
-                        <span class="tab-text">目录</span>
-                    </button>
-                    <button class="tab-btn" data-tab="words">
-                        <span class="tab-icon">📝</span>
-                        <span class="tab-text">单词</span>
-                    </button>
-                    <button class="tab-btn" data-tab="sentences">
-                        <span class="tab-icon">📄</span>
-                        <span class="tab-text">句子</span>
-                    </button>
-                    <button class="tab-btn" data-tab="reading">
-                        <span class="tab-icon">🔊</span>
-                        <span class="tab-text">朗读</span>
-                    </button>
+                <!-- 侧边栏头部 -->
+                <div class="sidebar-header">
+                    <h3>📚 文章目录</h3>
+                    <button id="refreshCatalog" class="btn-refresh" title="刷新目录">🔄</button>
                 </div>
 
-                <!-- 目录Tab内容 -->
-                <div class="tab-content active" id="catalogTab">
-                    <div class="catalog-header">
-                        <button id="refreshCatalog" class="btn-refresh" title="刷新目录">🔄 刷新</button>
-                    </div>
-                    <div class="catalog-tree" id="catalogTree">
-                        <p class="empty-state">加载中...</p>
-                    </div>
-                </div>
-
-                <!-- 单词Tab内容 -->
-                <div class="tab-content" id="wordsTab">
-                    <div class="word-filter">
-                        <label>
-                            <input type="radio" name="filter" value="annotated" checked>
-                            按标注
-                        </label>
-                        <label>
-                            <input type="radio" name="filter" value="all">
-                            全部
-                        </label>
-                        <label>
-                            <input type="radio" name="filter" value="alpha">
-                            A-Z排序
-                        </label>
-                        <label>
-                            <input type="radio" name="filter" value="frequency">
-                            按频率
-                        </label>
-                    </div>
-                    <div class="word-list" id="wordList">
-                        <p class="empty-state">暂无单词</p>
-                    </div>
-                </div>
-
-                <!-- 句子Tab内容 -->
-                <div class="tab-content" id="sentencesTab">
-                    <div class="sentences-header">
-                        <span class="sentences-count" id="sentencesCount">已标注 0 个句子</span>
-                    </div>
-                    <div class="sentence-list" id="sentenceList">
-                        <p class="empty-state">暂无标注的句子</p>
-                    </div>
-                </div>
-
-                <!-- 朗读Tab内容 -->
-                <div class="tab-content" id="readingTab">
-                    <div class="reading-controls">
-                        <button class="reading-btn" id="playAllBtn">
-                            <span class="btn-icon">▶️</span>
-                            <span class="btn-text">播放全部</span>
-                        </button>
-                        <button class="reading-btn" id="pauseReadingBtn" style="display: none;">
-                            <span class="btn-icon">⏸️</span>
-                            <span class="btn-text">暂停</span>
-                        </button>
-                        <button class="reading-btn" id="stopReadingBtn" style="display: none;">
-                            <span class="btn-icon">⏹️</span>
-                            <span class="btn-text">停止</span>
-                        </button>
-                    </div>
-                    <div class="reading-settings">
-                        <label class="setting-item">
-                            <span>语速</span>
-                            <input type="range" id="readingRate" min="0.5" max="2" step="0.1" value="1">
-                            <span id="rateValue">1.0x</span>
-                        </label>
-                    </div>
-                    <div class="reading-progress">
-                        <span class="progress-text" id="readingProgress">等待播放...</span>
-                    </div>
-                    <div class="reading-sentence-list" id="readingSentenceList">
-                        <p class="empty-state">暂无句子</p>
-                    </div>
+                <!-- 目录树 -->
+                <div class="catalog-tree" id="catalogTree">
+                    <p class="empty-state">加载中...</p>
                 </div>
             </aside>
+
 
             <!-- 文章内容区 -->
             <div class="article-section">

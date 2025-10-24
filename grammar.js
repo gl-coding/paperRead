@@ -54,7 +54,11 @@ const paginationControls = document.getElementById('paginationControls');
 const prevPageBtn = document.getElementById('prevPageBtn');
 const nextPageBtn = document.getElementById('nextPageBtn');
 const paginationInfo = document.getElementById('paginationInfo');
-const tabBtns = document.querySelectorAll('.tab-btn');
+const catalogTree = document.getElementById('catalogTree');
+const refreshCatalog = document.getElementById('refreshCatalog');
+
+// 以下元素仅在阅读文章页存在，这里保留引用避免报错
+const tabBtns = document.querySelectorAll('.tab-btn') || [];
 const sentenceList = document.getElementById('sentenceList');
 const sentencesCount = document.getElementById('sentencesCount');
 const readingSentenceList = document.getElementById('readingSentenceList');
@@ -64,8 +68,6 @@ const stopReadingBtn = document.getElementById('stopReadingBtn');
 const readingRate = document.getElementById('readingRate');
 const rateValue = document.getElementById('rateValue');
 const readingProgress = document.getElementById('readingProgress');
-const catalogTree = document.getElementById('catalogTree');
-const refreshCatalog = document.getElementById('refreshCatalog');
 
 // 示例文章
 const sampleArticle = `The Importance of Artificial Intelligence in Modern Society
@@ -107,25 +109,29 @@ filterRadios.forEach(radio => {
     radio.addEventListener('change', handleFilterChange);
 });
 
-// Tab切换事件
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const targetTab = btn.dataset.tab;
-        switchTab(targetTab);
+// Tab切换事件（仅在有Tab按钮时绑定）
+if (tabBtns && tabBtns.length > 0) {
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+            switchTab(targetTab);
+        });
     });
-});
+}
 
-// 朗读控制事件
-playAllBtn.addEventListener('click', startReadingAll);
-pauseReadingBtn.addEventListener('click', togglePauseReading);
-stopReadingBtn.addEventListener('click', stopReading);
-readingRate.addEventListener('input', (e) => {
-    const rate = parseFloat(e.target.value);
-    rateValue.textContent = rate.toFixed(1) + 'x';
-    if (currentUtterance) {
-        currentUtterance.rate = rate;
-    }
-});
+// 朗读控制事件（仅在元素存在时绑定）
+if (playAllBtn) playAllBtn.addEventListener('click', startReadingAll);
+if (pauseReadingBtn) pauseReadingBtn.addEventListener('click', togglePauseReading);
+if (stopReadingBtn) stopReadingBtn.addEventListener('click', stopReading);
+if (readingRate && rateValue) {
+    readingRate.addEventListener('input', (e) => {
+        const rate = parseFloat(e.target.value);
+        rateValue.textContent = rate.toFixed(1) + 'x';
+        if (currentUtterance) {
+            currentUtterance.rate = rate;
+        }
+    });
+}
 
 // 分页按钮事件
 prevPageBtn.addEventListener('click', goToPreviousPage);
@@ -881,46 +887,17 @@ function updateStats() {
     uniqueWordCount.textContent = `不同单词: ${wordsData.size}`;
 }
 
-// Tab切换函数
+// Tab切换函数（简化版 - 目录专用页面）
 function switchTab(tabName) {
-    // 更新tab按钮状态
-    tabBtns.forEach(btn => {
-        if (btn.dataset.tab === tabName) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-    
-    // 更新tab内容显示
-    const catalogTab = document.getElementById('catalogTab');
-    const wordsTab = document.getElementById('wordsTab');
-    const sentencesTab = document.getElementById('sentencesTab');
-    const readingTab = document.getElementById('readingTab');
-    
-    // 移除所有active类
-    if (catalogTab) catalogTab.classList.remove('active');
-    wordsTab.classList.remove('active');
-    sentencesTab.classList.remove('active');
-    readingTab.classList.remove('active');
-    
-    if (tabName === 'catalog') {
-        if (catalogTab) catalogTab.classList.add('active');
-    } else if (tabName === 'words') {
-        wordsTab.classList.add('active');
-    } else if (tabName === 'sentences') {
-        sentencesTab.classList.add('active');
-        // 切换到句子tab时更新句子列表
-        updateSentenceList();
-    } else if (tabName === 'reading') {
-        readingTab.classList.add('active');
-        // 切换到朗读tab时初始化朗读列表
-        initReadingList();
-    }
+    // 英语语法页面只有目录，无需切换
+    console.log('当前页面只显示文章目录');
 }
 
 // 更新句子列表
 function updateSentenceList() {
+    // 英语语法页面不需要句子列表
+    if (!sentenceList || !sentencesCount) return;
+    
     if (annotatedSentences.size === 0) {
         sentenceList.innerHTML = '<p class="empty-state">暂无标注的句子</p>';
         sentencesCount.textContent = '已标注 0 个句子';
@@ -1311,6 +1288,9 @@ async function recordReadingHistory(articleId) {
 
 // 初始化朗读列表（获取当前页所有句子）
 function initReadingList() {
+    // 英语语法页面不需要朗读列表
+    if (!readingSentenceList) return;
+    
     readingSentences = [];
     
     // 获取当前页面所有句子元素
@@ -1331,6 +1311,9 @@ function initReadingList() {
 
 // 更新朗读句子列表UI
 function updateReadingList() {
+    // 英语语法页面不需要朗读列表
+    if (!readingSentenceList) return;
+    
     if (readingSentences.length === 0) {
         readingSentenceList.innerHTML = '<p class="empty-state">暂无句子</p>';
         return;
@@ -1357,6 +1340,9 @@ function updateReadingList() {
 
 // 开始朗读所有句子
 function startReadingAll() {
+    // 英语语法页面不支持朗读
+    if (!playAllBtn || !pauseReadingBtn || !stopReadingBtn) return;
+    
     if (readingSentences.length === 0) {
         alert('当前页没有可朗读的句子');
         return;
@@ -1498,17 +1484,20 @@ function stopReading() {
     // 重置索引
     currentReadingIndex = -1;
     
-    // 更新按钮显示
-    playAllBtn.style.display = 'flex';
-    pauseReadingBtn.style.display = 'none';
-    stopReadingBtn.style.display = 'none';
-    
-    // 重置暂停按钮文本
-    pauseReadingBtn.querySelector('.btn-text').textContent = '暂停';
-    pauseReadingBtn.querySelector('.btn-icon').textContent = '⏸️';
+    // 更新按钮显示（仅在元素存在时）
+    if (playAllBtn) playAllBtn.style.display = 'flex';
+    if (pauseReadingBtn) {
+        pauseReadingBtn.style.display = 'none';
+        // 重置暂停按钮文本
+        const btnText = pauseReadingBtn.querySelector('.btn-text');
+        const btnIcon = pauseReadingBtn.querySelector('.btn-icon');
+        if (btnText) btnText.textContent = '暂停';
+        if (btnIcon) btnIcon.textContent = '⏸️';
+    }
+    if (stopReadingBtn) stopReadingBtn.style.display = 'none';
     
     // 更新进度
-    readingProgress.textContent = '等待播放...';
+    if (readingProgress) readingProgress.textContent = '等待播放...';
     
     // 更新列表
     updateReadingList();
