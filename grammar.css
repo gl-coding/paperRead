@@ -20,10 +20,15 @@ body {
 /* 主内容区 */
 .main-content {
     display: grid;
-    grid-template-columns: 1fr 350px;
+    grid-template-columns: 350px 1fr;
     gap: 20px;
     align-items: start;
     padding: 20px;
+}
+
+/* 调整元素顺序 */
+.sidebar {
+    order: -1;
 }
 
 /* 文章区域 */
