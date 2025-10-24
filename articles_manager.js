@@ -7,6 +7,7 @@ let totalPages = 1;
 let currentArticleId = null;
 let deleteArticleId = null;
 let uploadedFile = null;
+let currentTab = 'recommended'; // 当前选中的tab: recommended, favorite, reading
 
 // DOM元素
 const articlesList = document.getElementById('articlesList');
@@ -16,6 +17,7 @@ const searchInput = document.getElementById('searchInput');
 const difficultyFilter = document.getElementById('difficultyFilter');
 const categoryFilter = document.getElementById('categoryFilter');
 const clearFilterBtn = document.getElementById('clearFilterBtn');
+const tabBtns = document.querySelectorAll('.articles-tabs .tab-btn');
 
 // 模态框
 const articleModal = document.getElementById('articleModal');
@@ -65,6 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 设置事件监听
 function setupEventListeners() {
+    // Tab切换
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            switchTab(tab);
+        });
+    });
+    
     // 搜索和筛选
     searchInput.addEventListener('input', handleSearch);
     searchInput.addEventListener('keypress', (e) => {
@@ -109,6 +119,24 @@ function setupEventListeners() {
     });
 }
 
+// Tab切换函数
+function switchTab(tab) {
+    currentTab = tab;
+    currentPage = 1; // 切换tab时重置到第一页
+    
+    // 更新tab按钮状态
+    tabBtns.forEach(btn => {
+        if (btn.dataset.tab === tab) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // 重新加载文章列表
+    loadArticles();
+}
+
 // 加载文章列表
 async function loadArticles(page = 1) {
     try {
@@ -118,6 +146,18 @@ async function loadArticles(page = 1) {
             page: page,
             page_size: 10
         });
+
+        // 始终添加用户名参数（用于获取阅读信息）
+        const username = localStorage.getItem('paperread_username') || 'guest';
+        params.append('username', username);
+
+        // 添加tab参数
+        if (currentTab === 'favorite') {
+            params.append('is_favorite', 'true');
+        } else if (currentTab === 'reading') {
+            params.append('is_read', 'true');
+        }
+        // 推荐tab不添加任何筛选参数，显示全部文章
 
         // 添加搜索参数
         const search = searchInput.value.trim();
@@ -169,40 +209,38 @@ function displayArticles(articles) {
         const color = colors[index % colors.length];
         const badgeText = article.category || getDifficultyText(article.difficulty);
         
+        // 获取阅读进度（从localStorage）
+        const readingProgress = getReadingProgressInfo(article.id);
+        
+        // 生成阅读信息HTML（和日期信息合并到一行）
+        const lastReadTime = (article.reading_info?.read_at) 
+            ? formatRelativeTime(article.reading_info.read_at) 
+            : '';
+        const progressText = readingProgress.currentPage > 1 
+            ? `第 ${readingProgress.currentPage}/${readingProgress.totalPages} 页` 
+            : '';
+        
         return `
         <div class="article-card ${color}">
             <div class="article-card-header">
-                <div class="article-select" onclick="toggleArticleSelect(${article.id})"></div>
-                <h3 class="article-title">${escapeHtml(article.title)}</h3>
+                <div class="favorite-icon-inline ${article.is_favorited ? 'favorited' : ''}" 
+                     onclick="toggleFavorite(${article.id})" 
+                     data-article-id="${article.id}"
+                     title="${article.is_favorited ? '取消收藏' : '收藏'}">
+                    ❤️
+                </div>
+                <h3 class="article-title" onclick="openReadingMode(${article.id})" style="cursor: pointer;">${escapeHtml(article.title)}</h3>
                 <span class="article-badge">${badgeText}</span>
             </div>
-            <div class="article-preview">${escapeHtml(article.content_preview || '')}</div>
-            <a href="#" class="article-link" onclick="openReadingMode(${article.id}); return false;">
-                → 查看完整内容
-            </a>
+            <div class="article-preview" onclick="openReadingMode(${article.id})" style="cursor: pointer;">${escapeHtml(article.content_preview || '')}</div>
             <div class="article-meta">
                 <div class="article-meta-item">
-                    <span>📅</span>
-                    <span>${formatDate(article.created_at)}</span>
+                    ${lastReadTime ? `<span class="reading-time">📖 ${lastReadTime}</span>` : ''}
+                    ${progressText ? `<span class="reading-progress">${progressText}</span>` : ''}
+                    ${(lastReadTime || progressText) ? `<span class="meta-separator">•</span>` : ''}
+                    <span>📅 ${formatDate(article.created_at)}</span>
+                    ${article.updated_at ? `<span class="meta-separator">•</span><span>✏️ ${formatDate(article.updated_at)}</span>` : ''}
                 </div>
-                <div class="article-meta-item">
-                    <span>✏️</span>
-                    <span>${formatDateTime(article.updated_at)}</span>
-                </div>
-            </div>
-            <div class="article-actions">
-                <button class="btn btn-primary" onclick="openReadingMode(${article.id})">
-                    👁️ 查看
-                </button>
-                <button class="btn btn-edit" onclick="editArticle(${article.id})">
-                    ✏️ 编辑
-                </button>
-                <button class="btn" onclick="toggleArticleRead(${article.id})">
-                    ☑️ 标记已读
-                </button>
-                <button class="btn btn-danger" onclick="confirmDeleteArticle(${article.id})">
-                    🗑️ 删除
-                </button>
             </div>
         </div>
     `;
@@ -219,6 +257,75 @@ function toggleArticleSelect(id) {
 function toggleArticleRead(id) {
     // 这里可以添加标记已读的逻辑
     console.log('Toggle read status for article:', id);
+}
+
+// 切换收藏状态
+async function toggleFavorite(articleId) {
+    try {
+        const username = localStorage.getItem('paperread_username') || 'guest';
+        
+        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/toggle_favorite/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+        });
+        
+        if (!response.ok) {
+            throw new Error('操作失败');
+        }
+        
+        const data = await response.json();
+        
+        // 找到对应的红心图标并更新
+        const icon = document.querySelector(`.favorite-icon-inline[data-article-id="${articleId}"]`);
+        if (icon) {
+            if (data.is_favorited) {
+                icon.classList.add('favorited');
+                icon.title = '取消收藏';
+            } else {
+                icon.classList.remove('favorited');
+                icon.title = '收藏';
+            }
+        }
+        
+        // 如果在收藏tab，需要刷新列表（因为取消收藏后文章应该从列表消失）
+        if (currentTab === 'favorite' && !data.is_favorited) {
+            setTimeout(() => loadArticles(currentPage), 300);
+        }
+        
+        // 显示提示
+        showNotification(data.message);
+        
+    } catch (error) {
+        console.error('收藏操作失败:', error);
+        alert('收藏操作失败，请重试');
+    }
+}
+
+// 显示通知
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
 }
 
 // 更新分页
@@ -577,6 +684,48 @@ function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function formatRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins}分钟前`;
+    if (diffHours < 24) return `${diffHours}小时前`;
+    if (diffDays < 7) return `${diffDays}天前`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}个月前`;
+    return `${Math.floor(diffDays / 365)}年前`;
+}
+
+function getReadingProgressInfo(articleId) {
+    try {
+        const username = localStorage.getItem('paperread_username') || 'guest';
+        const key = `paperread_reading_progress_${username}_${articleId}`;
+        const progressData = localStorage.getItem(key);
+        
+        if (progressData) {
+            const data = JSON.parse(progressData);
+            return {
+                currentPage: data.currentPage || 1,
+                totalPages: data.totalPages || 1,
+                lastReadAt: data.lastReadAt || null
+            };
+        }
+    } catch (error) {
+        console.error('获取阅读进度失败:', error);
+    }
+    
+    return {
+        currentPage: 1,
+        totalPages: 1,
+        lastReadAt: null
+    };
 }
 
 function escapeHtml(text) {

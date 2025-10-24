@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试阅读信息</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 阅读信息调试工具</h1>
+    
+    <div class="debug-section">
+        <h2>1️⃣ 检查用户名</h2>
+        <p id="username-check">检查中...</p>
+        <button onclick="setUsername()">设置测试用户名</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>2️⃣ 检查LocalStorage中的阅读进度</h2>
+        <p id="progress-count">检查中...</p>
+        <div id="progress-list"></div>
+        <button onclick="checkLocalStorage()">刷新检查</button>
+        <button onclick="clearAllProgress()">清空所有进度</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>3️⃣ 检查API响应</h2>
+        <p id="api-status">等待检查...</p>
+        <button onclick="testAPI()">测试API</button>
+        <pre id="api-response"></pre>
+    </div>
+    
+    <div class="debug-section">
+        <h2>4️⃣ 测试阅读信息显示</h2>
+        <p id="display-test">等待测试...</p>
+        <button onclick="testDisplay()">测试显示逻辑</button>
+        <div id="display-result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        // 检查用户名
+        function checkUsername() {
+            const username = localStorage.getItem('paperread_username') || 'guest';
+            document.getElementById('username-check').innerHTML = 
+                `<span class="success">✅ 当前用户名: <strong>${username}</strong></span>`;
+            return username;
+        }
+        
+        // 设置测试用户名
+        function setUsername() {
+            localStorage.setItem('paperread_username', 'guest');
+            checkUsername();
+            alert('已设置用户名为: guest');
+        }
+        
+        // 检查LocalStorage
+        function checkLocalStorage() {
+            const username = checkUsername();
+            const progressList = document.getElementById('progress-list');
+            const progressCount = document.getElementById('progress-count');
+            
+            let count = 0;
+            let html = '<div style="margin-top: 10px;">';
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('paperread_reading_progress_')) {
+                    count++;
+                    const value = localStorage.getItem(key);
+                    const articleId = key.split('_').pop();
+                    
+                    try {
+                        const data = JSON.parse(value);
+                        html += `
+                            <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                                <strong>文章 ID: ${articleId}</strong><br>
+                                当前页: ${data.currentPage} / ${data.totalPages}<br>
+                                最后阅读: ${new Date(data.lastReadAt).toLocaleString('zh-CN')}
+                            </div>
+                        `;
+                    } catch (e) {
+                        html += `
+                            <div style="padding: 10px; margin: 5px 0; background: #fff3cd; border-radius: 5px;">
+                                <strong class="warning">⚠️ 文章 ID: ${articleId}</strong><br>
+                                数据格式错误: ${value}
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            html += '</div>';
+            
+            if (count === 0) {
+                progressCount.innerHTML = '<span class="warning">⚠️ 没有找到阅读进度数据</span>';
+                progressList.innerHTML = '<p class="warning">请先打开一篇文章进行阅读，然后再检查</p>';
+            } else {
+                progressCount.innerHTML = `<span class="success">✅ 找到 ${count} 条阅读进度记录</span>`;
+                progressList.innerHTML = html;
+            }
+        }
+        
+        // 清空所有进度
+        function clearAllProgress() {
+            if (!confirm('确定要清空所有阅读进度吗？')) return;
+            
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('paperread_reading_progress_') || key.startsWith('reading_progress_')) {
+                    keys.push(key);
+                }
+            }
+            
+            keys.forEach(key => localStorage.removeItem(key));
+            alert(`已清空 ${keys.length} 条阅读进度记录`);
+            checkLocalStorage();
+        }
+        
+        // 测试API
+        async function testAPI() {
+            const username = checkUsername();
+            const statusEl = document.getElementById('api-status');
+            const responseEl = document.getElementById('api-response');
+            
+            statusEl.innerHTML = '<span class="warning">⏳ 请求中...</span>';
+            responseEl.textContent = '';
+            
+            try {
+                const url = `${API_BASE_URL}/articles/?page=1&page_size=3&username=${username}&is_read=true`;
+                statusEl.innerHTML += `<br><small>请求URL: ${url}</small>`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                statusEl.innerHTML = `<span class="success">✅ API响应成功</span>`;
+                statusEl.innerHTML += `<br>找到 ${data.count} 篇已读文章`;
+                
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                // 检查reading_info
+                if (data.results && data.results.length > 0) {
+                    const hasReadingInfo = data.results.some(article => article.reading_info);
+                    if (hasReadingInfo) {
+                        statusEl.innerHTML += `<br><span class="success">✅ 文章包含reading_info字段</span>`;
+                    } else {
+                        statusEl.innerHTML += `<br><span class="error">❌ 文章缺少reading_info字段</span>`;
+                    }
+                }
+                
+            } catch (error) {
+                statusEl.innerHTML = `<span class="error">❌ API请求失败: ${error.message}</span>`;
+                responseEl.textContent = error.stack;
+            }
+        }
+        
+        // 测试显示逻辑
+        async function testDisplay() {
+            const username = checkUsername();
+            const testEl = document.getElementById('display-test');
+            const resultEl = document.getElementById('display-result');
+            
+            testEl.innerHTML = '<span class="warning">⏳ 测试中...</span>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/articles/?page=1&page_size=1&username=${username}&is_read=true`);
+                const data = await response.json();
+                
+                if (!data.results || data.results.length === 0) {
+                    testEl.innerHTML = '<span class="warning">⚠️ 没有已读文章，请先打开一篇文章</span>';
+                    return;
+                }
+                
+                const article = data.results[0];
+                
+                // 模拟前端显示逻辑
+                const readingProgress = getReadingProgressInfo(article.id);
+                
+                let html = '<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+                html += `<h3>${article.title}</h3>`;
+                
+                if (article.reading_info || readingProgress.currentPage > 1) {
+                    const lastReadTime = article.reading_info?.read_at 
+                        ? formatRelativeTime(article.reading_info.read_at) 
+                        : '';
+                    const progressText = readingProgress.currentPage > 1 
+                        ? `第 ${readingProgress.currentPage}/${readingProgress.totalPages} 页` 
+                        : '';
+                    
+                    html += `
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea;">
+                            ${lastReadTime ? `<span style="color: #667eea; font-weight: 500;">📖 ${lastReadTime}</span>` : ''}
+                            ${progressText ? `<span style="color: #764ba2; font-weight: 500; padding: 2px 8px; background: rgba(255,255,255,0.7); border-radius: 12px; margin-left: 10px;">${progressText}</span>` : ''}
+                        </div>
+                    `;
+                    testEl.innerHTML = '<span class="success">✅ 阅读信息显示正常</span>';
+                } else {
+                    html += '<p class="warning">⚠️ 没有阅读信息</p>';
+                    testEl.innerHTML = '<span class="warning">⚠️ 没有阅读信息可显示</span>';
+                }
+                
+                html += '</div>';
+                resultEl.innerHTML = html;
+                
+            } catch (error) {
+                testEl.innerHTML = `<span class="error">❌ 测试失败: ${error.message}</span>`;
+            }
+        }
+        
+        // 工具函数
+        function getReadingProgressInfo(articleId) {
+            try {
+                const username = localStorage.getItem('paperread_username') || 'guest';
+                const key = `paperread_reading_progress_${username}_${articleId}`;
+                const progressData = localStorage.getItem(key);
+                
+                if (progressData) {
+                    const data = JSON.parse(progressData);
+                    return {
+                        currentPage: data.currentPage || 1,
+                        totalPages: data.totalPages || 1,
+                        lastReadAt: data.lastReadAt || null
+                    };
+                }
+            } catch (error) {
+                console.error('获取阅读进度失败:', error);
+            }
+            
+            return {
+                currentPage: 1,
+                totalPages: 1,
+                lastReadAt: null
+            };
+        }
+        
+        function formatRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return '刚刚';
+            if (diffMins < 60) return `${diffMins}分钟前`;
+            if (diffHours < 24) return `${diffHours}小时前`;
+            if (diffDays < 7) return `${diffDays}天前`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
+            if (diffDays < 365) return `${Math.floor(diffDays / 30)}个月前`;
+            return `${Math.floor(diffDays / 365)}年前`;
+        }
+        
+        // 页面加载时自动检查
+        window.onload = function() {
+            checkUsername();
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>
+

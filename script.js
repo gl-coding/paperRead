@@ -129,16 +129,39 @@ nextPageBtn.addEventListener('click', goToNextPage);
 // 保存阅读进度
 function saveReadingProgress(articleId, page) {
     const username = getUsername();
-    const key = `reading_progress_${username}_${articleId}`;
-    localStorage.setItem(key, page.toString());
+    const key = `paperread_reading_progress_${username}_${articleId}`;
+    const progressData = {
+        currentPage: page,
+        totalPages: totalPages,
+        lastReadAt: new Date().toISOString()
+    };
+    localStorage.setItem(key, JSON.stringify(progressData));
 }
 
 // 获取阅读进度
 function getReadingProgress(articleId) {
     const username = getUsername();
-    const key = `reading_progress_${username}_${articleId}`;
-    const savedPage = localStorage.getItem(key);
-    return savedPage ? parseInt(savedPage) : 1;
+    const key = `paperread_reading_progress_${username}_${articleId}`;
+    const savedData = localStorage.getItem(key);
+    
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            return data.currentPage || 1;
+        } catch (e) {
+            // 兼容旧格式（直接存储的数字）
+            return parseInt(savedData) || 1;
+        }
+    }
+    
+    // 尝试读取旧格式的key
+    const oldKey = `reading_progress_${username}_${articleId}`;
+    const oldData = localStorage.getItem(oldKey);
+    if (oldData) {
+        return parseInt(oldData) || 1;
+    }
+    
+    return 1;
 }
 
 // 加载文章内容（全部使用后端分页）
@@ -1139,6 +1162,9 @@ async function loadArticleFromURL() {
                 // 加载用户的标注
                 await loadAnnotationsFromServer(articleId);
                 
+                // 记录阅读历史
+                await recordReadingHistory(articleId);
+                
                 // 如果不是第一页，显示提示
                 if (savedPage > 1) {
                     showReadingProgressNotification(savedPage);
@@ -1244,6 +1270,31 @@ async function saveAnnotationsToServer() {
         console.log('标注已保存');
     } catch (error) {
         console.error('保存标注失败:', error);
+    }
+}
+
+// 记录阅读历史
+async function recordReadingHistory(articleId) {
+    try {
+        const username = getUsername();
+        
+        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/record_reading/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                username,
+                read_duration: 0 // 可以后续扩展记录实际阅读时长
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('记录阅读历史失败');
+        }
+        console.log('阅读历史已记录');
+    } catch (error) {
+        console.error('记录阅读历史失败:', error);
     }
 }
 

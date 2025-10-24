@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Article, ReadingHistory, Annotation
+from .models import Article, ReadingHistory, Annotation, Favorite
 from .serializers import (
     ArticleSerializer, ArticleListSerializer,
     ReadingHistorySerializer, AnnotationSerializer
@@ -45,9 +45,41 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return ArticleListSerializer
         return ArticleSerializer
+    
+    def get_serializer_context(self):
+        """添加额外的context信息到序列化器"""
+        context = super().get_serializer_context()
+        # 添加用户名到context，用于获取阅读历史
+        context['username'] = self.request.query_params.get('username', None)
+        return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        
+        # 推荐筛选
+        is_recommended = self.request.query_params.get('is_recommended', None)
+        if is_recommended == 'true':
+            queryset = queryset.filter(is_recommended=True)
+        
+        # 收藏筛选
+        is_favorite = self.request.query_params.get('is_favorite', None)
+        if is_favorite == 'true':
+            username = self.request.query_params.get('username', 'guest')
+            # 获取该用户收藏的文章ID列表
+            favorite_article_ids = Favorite.objects.filter(
+                username=username
+            ).values_list('article_id', flat=True).distinct()
+            queryset = queryset.filter(id__in=favorite_article_ids)
+        
+        # 在读筛选（已读文章）
+        is_read = self.request.query_params.get('is_read', None)
+        if is_read == 'true':
+            username = self.request.query_params.get('username', 'guest')
+            # 获取该用户已读的文章ID列表
+            read_article_ids = ReadingHistory.objects.filter(
+                username=username
+            ).values_list('article_id', flat=True).distinct()
+            queryset = queryset.filter(id__in=read_article_ids)
         
         # 搜索功能
         search = self.request.query_params.get('search', None)
@@ -74,15 +106,23 @@ class ArticleViewSet(viewsets.ModelViewSet):
         """记录阅读历史"""
         article = self.get_object()
         user_ip = get_client_ip(request)
+        username = get_user_identifier(request)
         read_duration = request.data.get('read_duration', 0)
         
-        ReadingHistory.objects.create(
+        # 使用get_or_create避免重复记录，更新阅读时间和时长
+        reading_history, created = ReadingHistory.objects.update_or_create(
             article=article,
-            user_ip=user_ip,
-            read_duration=read_duration
+            username=username,
+            defaults={
+                'user_ip': user_ip,
+                'read_duration': read_duration
+            }
         )
         
-        return Response({'status': 'reading recorded'})
+        return Response({
+            'status': 'reading recorded',
+            'created': created
+        })
 
     @action(detail=True, methods=['get'])
     def annotations(self, request, pk=None):
@@ -155,6 +195,53 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'article_title': article.title,
             'word_count': article.word_count,
             'paragraph_count': article.paragraph_count
+        })
+    
+    @action(detail=True, methods=['post'])
+    def toggle_favorite(self, request, pk=None):
+        """收藏/取消收藏文章"""
+        article = self.get_object()
+        username = get_user_identifier(request)
+        
+        # 检查是否已收藏
+        favorite = Favorite.objects.filter(
+            article=article,
+            username=username
+        ).first()
+        
+        if favorite:
+            # 已收藏，则取消收藏
+            favorite.delete()
+            return Response({
+                'status': 'unfavorited',
+                'is_favorited': False,
+                'message': '已取消收藏'
+            })
+        else:
+            # 未收藏，则添加收藏
+            Favorite.objects.create(
+                article=article,
+                username=username
+            )
+            return Response({
+                'status': 'favorited',
+                'is_favorited': True,
+                'message': '已收藏'
+            })
+    
+    @action(detail=True, methods=['get'])
+    def check_favorite(self, request, pk=None):
+        """检查文章是否已收藏"""
+        article = self.get_object()
+        username = get_user_identifier(request)
+        
+        is_favorited = Favorite.objects.filter(
+            article=article,
+            username=username
+        ).exists()
+        
+        return Response({
+            'is_favorited': is_favorited
         })
 
 

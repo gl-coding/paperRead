@@ -25,6 +25,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    is_recommended = models.BooleanField(default=False, verbose_name='是否推荐')
 
     class Meta:
         db_table = 'articles'
@@ -52,6 +53,7 @@ class ReadingHistory(models.Model):
     """阅读历史记录"""
     article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name='文章')
     user_ip = models.GenericIPAddressField(verbose_name='用户IP')
+    username = models.CharField(max_length=50, default='guest', verbose_name='用户名')
     read_at = models.DateTimeField(default=timezone.now, verbose_name='阅读时间')
     read_duration = models.IntegerField(default=0, verbose_name='阅读时长(秒)')
 
@@ -60,9 +62,10 @@ class ReadingHistory(models.Model):
         verbose_name = '阅读历史'
         verbose_name_plural = '阅读历史'
         ordering = ['-read_at']
+        unique_together = [['article', 'username']]
 
     def __str__(self):
-        return f"{self.user_ip} - {self.article.title}"
+        return f"{self.username} - {self.article.title}"
 
 
 class Annotation(models.Model):
@@ -81,3 +84,20 @@ class Annotation(models.Model):
 
     def __str__(self):
         return f"{self.word} - {self.color}"
+
+
+class Favorite(models.Model):
+    """用户收藏文章"""
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name='文章')
+    username = models.CharField(max_length=50, default='guest', verbose_name='用户名')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='收藏时间')
+
+    class Meta:
+        db_table = 'favorites'
+        verbose_name = '收藏'
+        verbose_name_plural = '收藏'
+        ordering = ['-created_at']
+        unique_together = [['article', 'username']]
+
+    def __str__(self):
+        return f"{self.username} - {self.article.title}"
