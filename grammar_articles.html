@@ -238,6 +238,30 @@
         </div>
     </div>
 
+    <!-- 文章预览模态框 -->
+    <div id="previewModal" class="modal" style="display: none;">
+        <div class="modal-content modal-preview">
+            <div class="modal-header">
+                <h2 id="previewTitle">文章预览</h2>
+                <button class="modal-close" id="closePreviewModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-info">
+                    <span class="preview-badge" id="previewDifficulty">中级</span>
+                    <span class="preview-category" id="previewCategory">分类</span>
+                    <span class="preview-meta" id="previewMeta">字数：0 | 段落：0</span>
+                </div>
+                <div class="preview-content" id="previewContent">
+                    <div class="loading">加载中...</div>
+                </div>
+                <div class="preview-actions">
+                    <button class="btn btn-secondary" onclick="closePreviewModal()">关闭</button>
+                    <button class="btn btn-primary" id="openFullArticle">打开阅读模式</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="grammar_articles.js"></script>
 </body>
 </html>

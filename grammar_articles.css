@@ -495,6 +495,16 @@ body {
     box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
 }
 
+.article-actions .btn-preview {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.article-actions .btn-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
 .loading {
     text-align: center;
     padding: 40px;
@@ -583,6 +593,97 @@ body {
 
 .modal-small {
     max-width: 500px;
+}
+
+.modal-preview {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+.modal-preview .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: calc(85vh - 120px);
+    overflow: hidden;
+}
+
+.preview-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.preview-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.preview-category {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    background: #f0f0f0;
+    color: #666;
+}
+
+.preview-meta {
+    margin-left: auto;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.preview-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    line-height: 1.8;
+}
+
+.preview-content p {
+    margin-bottom: 16px;
+    color: #333;
+    text-align: justify;
+}
+
+.preview-content p:last-child {
+    margin-bottom: 0;
+}
+
+.preview-content .loading {
+    padding: 60px 20px;
+    text-align: center;
+    color: #999;
+}
+
+.preview-content .error {
+    padding: 40px 20px;
+    text-align: center;
+    color: #f44336;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.preview-actions .btn {
+    padding: 10px 24px;
+    min-width: 120px;
 }
 
 @keyframes slideUp {
@@ -804,6 +905,34 @@ body {
 
     .modal-content {
         width: 95%;
+    }
+
+    .modal-preview {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-preview .modal-body {
+        max-height: calc(90vh - 100px);
+    }
+
+    .preview-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .preview-meta {
+        margin-left: 0;
+    }
+
+    .preview-actions {
+        flex-direction: column-reverse;
+    }
+
+    .preview-actions .btn {
+        width: 100%;
+        min-width: auto;
     }
 }
 

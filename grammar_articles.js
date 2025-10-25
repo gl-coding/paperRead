@@ -245,6 +245,9 @@ function displayArticles(articles) {
                 </div>
             </div>
             <div class="article-actions">
+                <button class="btn-action btn-preview" onclick="previewArticle(${article.id})" title="快速预览">
+                    🔍 预览
+                </button>
                 <button class="btn-action btn-view" onclick="openReadingMode(${article.id})" title="查看文章">
                     👁️ 查看
                 </button>
@@ -426,7 +429,11 @@ async function editArticle(id) {
             apiEndpoint = 'user-grammar-articles';
         }
 
-        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${id}/`);
+        // 获取用户名并添加到请求参数
+        const username = localStorage.getItem('paperread_username') || 'guest';
+        const params = new URLSearchParams({ username });
+
+        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${id}/?${params}`);
         const article = await response.json();
 
         document.getElementById('modalTitle').textContent = '编辑文章';
@@ -880,4 +887,90 @@ async function generateContent() {
         generateBtn.disabled = false;
     }
 }
+
+// 预览文章
+let currentPreviewArticleId = null;
+
+async function previewArticle(id) {
+    try {
+        // 根据当前tab选择不同的API端点
+        let apiEndpoint = '';
+        if (currentTab === 'grammar') {
+            apiEndpoint = 'grammar-articles';
+        } else if (currentTab === 'mine') {
+            apiEndpoint = 'user-grammar-articles';
+        }
+
+        // 显示模态框
+        const previewModal = document.getElementById('previewModal');
+        const previewContent = document.getElementById('previewContent');
+        previewContent.innerHTML = '<div class="loading">加载中...</div>';
+        previewModal.style.display = 'flex';
+        
+        currentPreviewArticleId = id;
+
+        // 获取用户名并添加到请求参数
+        const username = localStorage.getItem('paperread_username') || 'guest';
+        const params = new URLSearchParams({ username });
+
+        // 获取文章详情
+        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${id}/?${params}`);
+        const article = await response.json();
+
+        // 更新标题
+        document.getElementById('previewTitle').textContent = article.title;
+
+        // 更新信息
+        const difficultyMap = {
+            'beginner': '初级',
+            'intermediate': '中级',
+            'advanced': '高级'
+        };
+        document.getElementById('previewDifficulty').textContent = difficultyMap[article.difficulty] || article.difficulty;
+        document.getElementById('previewCategory').textContent = article.category || '未分类';
+        document.getElementById('previewMeta').textContent = `字数：${article.word_count} | 段落：${article.paragraph_count}`;
+
+        // 显示内容
+        const formattedContent = article.content
+            .split('\n\n')
+            .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
+            .join('');
+        previewContent.innerHTML = formattedContent;
+
+        // 设置打开按钮
+        document.getElementById('openFullArticle').onclick = () => {
+            closePreviewModal();
+            openReadingMode(id);
+        };
+
+    } catch (error) {
+        console.error('加载文章预览失败:', error);
+        document.getElementById('previewContent').innerHTML = '<p class="error">加载失败，请重试</p>';
+    }
+}
+
+// 关闭预览模态框
+function closePreviewModal() {
+    const previewModal = document.getElementById('previewModal');
+    previewModal.style.display = 'none';
+    currentPreviewArticleId = null;
+}
+
+// 设置预览模态框事件监听
+document.addEventListener('DOMContentLoaded', () => {
+    const closePreviewBtn = document.getElementById('closePreviewModal');
+    if (closePreviewBtn) {
+        closePreviewBtn.addEventListener('click', closePreviewModal);
+    }
+
+    // 点击模态框背景关闭
+    const previewModal = document.getElementById('previewModal');
+    if (previewModal) {
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                closePreviewModal();
+            }
+        });
+    }
+});
 
