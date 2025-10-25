@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Article, ReadingHistory, Annotation
+from .models import Article, ReadingHistory, Annotation, GrammarArticle, UserGrammarArticle
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'content', 'source', 'difficulty',
-            'category', 'word_count', 'paragraph_count', 'created_at', 'updated_at'
+            'category', 'word_count', 'paragraph_count', 'created_at', 'updated_at', 'author'
         ]
         read_only_fields = ['word_count', 'paragraph_count', 'created_at', 'updated_at']
 
@@ -94,4 +94,62 @@ class AnnotationSerializer(serializers.ModelSerializer):
         model = Annotation
         fields = ['id', 'article', 'user_ip', 'word', 'color', 'created_at']
         read_only_fields = ['created_at']
+
+
+class GrammarArticleSerializer(serializers.ModelSerializer):
+    """语法文章序列化器"""
+    class Meta:
+        model = GrammarArticle
+        fields = [
+            'id', 'title', 'content', 'source', 'difficulty',
+            'category', 'word_count', 'paragraph_count', 'created_at', 'updated_at', 'author'
+        ]
+        read_only_fields = ['word_count', 'paragraph_count', 'created_at', 'updated_at']
+
+
+class GrammarArticleListSerializer(serializers.ModelSerializer):
+    """语法文章列表序列化器（简化版）"""
+    content_preview = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GrammarArticle
+        fields = [
+            'id', 'title', 'content_preview', 'source', 
+            'difficulty', 'category', 'word_count', 'paragraph_count', 'created_at'
+        ]
+
+    def get_content_preview(self, obj):
+        """返回内容预览（前200个字符）"""
+        if obj.content:
+            return obj.content[:200] + '...' if len(obj.content) > 200 else obj.content
+        return ''
+
+
+class UserGrammarArticleSerializer(serializers.ModelSerializer):
+    """用户语法文章序列化器"""
+    class Meta:
+        model = UserGrammarArticle
+        fields = [
+            'id', 'title', 'content', 'source', 'difficulty',
+            'category', 'word_count', 'paragraph_count', 'created_at', 'updated_at', 'author'
+        ]
+        read_only_fields = ['word_count', 'paragraph_count', 'created_at', 'updated_at']
+
+
+class UserGrammarArticleListSerializer(serializers.ModelSerializer):
+    """用户语法文章列表序列化器（简化版）"""
+    content_preview = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserGrammarArticle
+        fields = [
+            'id', 'title', 'content_preview', 'source', 
+            'difficulty', 'category', 'word_count', 'paragraph_count', 'created_at', 'author'
+        ]
+
+    def get_content_preview(self, obj):
+        """返回内容预览（前200个字符）"""
+        if obj.content:
+            return obj.content[:200] + '...' if len(obj.content) > 200 else obj.content
+        return ''
 

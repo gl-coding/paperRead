@@ -56,17 +56,13 @@
         <div class="main-content">
             <!-- Tab切换区域 -->
             <div class="articles-tabs">
-                <button class="tab-btn active" data-tab="recommended">
-                    <span class="tab-icon">⭐</span>
-                    <span class="tab-text">推荐</span>
+                <button class="tab-btn active" data-tab="grammar">
+                    <span class="tab-icon">📝</span>
+                    <span class="tab-text">语法</span>
                 </button>
-                <button class="tab-btn" data-tab="favorite">
-                    <span class="tab-icon">❤️</span>
-                    <span class="tab-text">收藏</span>
-                </button>
-                <button class="tab-btn" data-tab="reading">
-                    <span class="tab-icon">📖</span>
-                    <span class="tab-text">在读</span>
+                <button class="tab-btn" data-tab="mine">
+                    <span class="tab-icon">👤</span>
+                    <span class="tab-text">我的</span>
                 </button>
             </div>
 
@@ -88,6 +84,10 @@
                         <option value="">全部分类</option>
                     </select>
                     <button id="clearFilterBtn" class="btn btn-secondary">清除筛选</button>
+                    <button class="btn btn-primary" id="createArticleBtn" onclick="openCreateModal()">
+                        <span>➕</span>
+                        <span>新建文章</span>
+                    </button>
                 </div>
             </div>
 
@@ -137,9 +137,28 @@
                         <input type="text" id="articleSource" placeholder="文章来源（可选）">
                     </div>
 
+                    <!-- AI生成内容区域 -->
+                    <div class="form-group ai-prompt-section">
+                        <label for="aiPrompt">
+                            🤖 AI 生成内容
+                            <span class="label-hint">（使用AI根据提示词生成文章内容）</span>
+                        </label>
+                        <div class="ai-prompt-container">
+                            <textarea id="aiPrompt" rows="3" placeholder="例如：写一篇关于人工智能发展历史的英文文章，适合中级读者"></textarea>
+                            <button type="button" class="btn btn-ai" id="generateBtn" onclick="generateContent()">
+                                <span class="btn-icon">✨</span>
+                                <span class="btn-text">生成内容</span>
+                            </button>
+                        </div>
+                        <div id="generateStatus" class="generate-status" style="display: none;">
+                            <span class="status-icon">⏳</span>
+                            <span class="status-text">正在生成中...</span>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="articleContent">内容 *</label>
-                        <textarea id="articleContent" required rows="15" placeholder="请输入英文文章内容"></textarea>
+                        <textarea id="articleContent" required rows="15" placeholder="请输入英文文章内容或使用AI生成"></textarea>
                         <div class="content-stats">
                             <span id="wordCountDisplay">单词数: 0</span>
                             <span id="charCountDisplay">字符数: 0</span>

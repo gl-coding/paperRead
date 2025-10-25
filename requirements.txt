@@ -2,3 +2,8 @@ Django>=5.0
 djangorestframework>=3.14
 django-cors-headers>=4.0
 
+# AI生成功能（可选，根据需要安装）
+# openai>=1.0.0  # OpenAI GPT API / DeepSeek API（兼容OpenAI SDK）
+# anthropic>=0.8.0  # Anthropic Claude API
+# python-dotenv>=1.0.0  # 环境变量管理
+

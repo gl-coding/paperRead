@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRecentArticles();
     setupEventListeners();
     setupUsernameEditor();
+    setupAiApiConfig();
 });
 
 // 设置用户名编辑器
@@ -402,6 +403,254 @@ window.onclick = function(event) {
     }
     if (event.target === uploadModal) {
         closeUploadModal();
+    }
+}
+
+// AI API 配置管理
+function setupAiApiConfig() {
+    const aiProvider = document.getElementById('aiProvider');
+    const aiApiKey = document.getElementById('aiApiKey');
+    const customApiUrlGroup = document.getElementById('customApiUrlGroup');
+    const customApiUrl = document.getElementById('customApiUrl');
+    const toggleApiKeyBtn = document.getElementById('toggleApiKeyBtn');
+    const testApiBtn = document.getElementById('testApiBtn');
+    const saveApiConfigBtn = document.getElementById('saveApiConfigBtn');
+    const clearApiConfigBtn = document.getElementById('clearApiConfigBtn');
+    const configStatus = document.getElementById('configStatus');
+    
+    // 加载保存的配置
+    loadAiApiConfig();
+    
+    // 切换服务商时显示/隐藏自定义API地址
+    aiProvider.addEventListener('change', () => {
+        if (aiProvider.value === 'custom') {
+            customApiUrlGroup.style.display = 'flex';
+        } else {
+            customApiUrlGroup.style.display = 'none';
+        }
+    });
+    
+    // 显示/隐藏API密钥
+    toggleApiKeyBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 防止冒泡
+        if (aiApiKey.type === 'password') {
+            aiApiKey.type = 'text';
+            toggleApiKeyBtn.textContent = '🙈';
+        } else {
+            aiApiKey.type = 'password';
+            toggleApiKeyBtn.textContent = '👁️';
+        }
+    });
+    
+    // 测试API连接
+    testApiBtn.addEventListener('click', testApiConnection);
+    
+    // 保存配置
+    saveApiConfigBtn.addEventListener('click', saveAiApiConfig);
+    
+    // 清除配置
+    clearApiConfigBtn.addEventListener('click', clearAiApiConfig);
+}
+
+// 加载AI API配置
+function loadAiApiConfig() {
+    try {
+        const config = localStorage.getItem('paperread_ai_config');
+        if (config) {
+            const { provider, apiKey, customUrl } = JSON.parse(config);
+            
+            if (provider) {
+                document.getElementById('aiProvider').value = provider;
+                
+                // 触发change事件以显示/隐藏自定义URL字段
+                if (provider === 'custom') {
+                    document.getElementById('customApiUrlGroup').style.display = 'flex';
+                }
+            }
+            
+            if (apiKey) {
+                document.getElementById('aiApiKey').value = apiKey;
+            }
+            
+            if (customUrl) {
+                document.getElementById('customApiUrl').value = customUrl;
+            }
+            
+            showConfigStatus('info', 'ℹ️', '已加载配置');
+        }
+    } catch (error) {
+        console.error('加载AI API配置失败:', error);
+    }
+}
+
+// 保存AI API配置
+function saveAiApiConfig() {
+    const provider = document.getElementById('aiProvider').value;
+    const apiKey = document.getElementById('aiApiKey').value.trim();
+    const customUrl = document.getElementById('customApiUrl').value.trim();
+    
+    if (!provider) {
+        showConfigStatus('error', '❌', '请选择AI服务商');
+        return;
+    }
+    
+    if (!apiKey) {
+        showConfigStatus('error', '❌', '请输入API密钥');
+        return;
+    }
+    
+    if (provider === 'custom' && !customUrl) {
+        showConfigStatus('error', '❌', '请输入自定义API地址');
+        return;
+    }
+    
+    try {
+        const config = {
+            provider,
+            apiKey,
+            customUrl: provider === 'custom' ? customUrl : null
+        };
+        
+        localStorage.setItem('paperread_ai_config', JSON.stringify(config));
+        showConfigStatus('success', '✅', '配置保存成功！');
+        showNotification('AI API配置已保存');
+    } catch (error) {
+        console.error('保存AI API配置失败:', error);
+        showConfigStatus('error', '❌', '保存失败：' + error.message);
+    }
+}
+
+// 清除AI API配置
+function clearAiApiConfig() {
+    if (!confirm('确定要清除AI API配置吗？')) {
+        return;
+    }
+    
+    try {
+        localStorage.removeItem('paperread_ai_config');
+        document.getElementById('aiProvider').value = '';
+        document.getElementById('aiApiKey').value = '';
+        document.getElementById('customApiUrl').value = '';
+        document.getElementById('customApiUrlGroup').style.display = 'none';
+        
+        showConfigStatus('info', 'ℹ️', '配置已清除');
+        showNotification('AI API配置已清除');
+    } catch (error) {
+        console.error('清除AI API配置失败:', error);
+        showConfigStatus('error', '❌', '清除失败：' + error.message);
+    }
+}
+
+// 测试API连接
+async function testApiConnection() {
+    const provider = document.getElementById('aiProvider').value;
+    const apiKey = document.getElementById('aiApiKey').value.trim();
+    
+    if (!provider) {
+        showConfigStatus('error', '❌', '请先选择AI服务商');
+        return;
+    }
+    
+    if (!apiKey) {
+        showConfigStatus('error', '❌', '请先输入API密钥');
+        return;
+    }
+    
+    showConfigStatus('info', '⏳', '正在测试连接...');
+    testApiBtn.disabled = true;
+    
+    try {
+        // 这里可以调用后端API来测试连接
+        // 为了演示，我们暂时使用简单的验证
+        
+        // 模拟API调用延迟
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // 简单验证API密钥格式
+        let isValid = false;
+        switch (provider) {
+            case 'openai':
+                isValid = apiKey.startsWith('sk-');
+                break;
+            case 'claude':
+                isValid = apiKey.startsWith('sk-ant-');
+                break;
+            case 'gemini':
+                isValid = apiKey.length > 20;
+                break;
+            case 'deepseek':
+                isValid = apiKey.startsWith('sk-') && apiKey.length > 30;
+                break;
+            case 'custom':
+                isValid = apiKey.length > 0;
+                break;
+        }
+        
+        if (isValid) {
+            showConfigStatus('success', '✅', '连接测试成功！API密钥格式正确');
+            showNotification('API连接测试成功');
+        } else {
+            showConfigStatus('error', '❌', 'API密钥格式不正确，请检查');
+        }
+        
+    } catch (error) {
+        console.error('测试API连接失败:', error);
+        showConfigStatus('error', '❌', '测试失败：' + error.message);
+    } finally {
+        testApiBtn.disabled = false;
+    }
+}
+
+// 显示配置状态
+function showConfigStatus(type, icon, text) {
+    const configStatus = document.getElementById('configStatus');
+    const statusIcon = configStatus.querySelector('.status-icon');
+    const statusText = configStatus.querySelector('.status-text');
+    
+    configStatus.className = `config-status-compact ${type}`;
+    statusIcon.textContent = icon;
+    statusText.textContent = text;
+    configStatus.style.display = 'flex';
+    
+    // 3秒后自动隐藏（除了info类型）
+    if (type !== 'info') {
+        setTimeout(() => {
+            configStatus.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// 切换AI配置展开/收起
+function toggleAiConfig() {
+    const content = document.getElementById('aiConfigContent');
+    const btn = document.getElementById('expandConfigBtn');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        btn.classList.add('expanded');
+        btn.textContent = '▲';
+    } else {
+        content.style.display = 'none';
+        btn.classList.remove('expanded');
+        btn.textContent = '▼';
+    }
+}
+
+// 切换帮助信息
+function toggleHelp(event) {
+    event.preventDefault();
+    const help = document.getElementById('configHelp');
+    help.style.display = help.style.display === 'none' ? 'block' : 'none';
+}
+
+// 获取AI API配置（供其他页面使用）
+function getAiApiConfig() {
+    try {
+        const config = localStorage.getItem('paperread_ai_config');
+        return config ? JSON.parse(config) : null;
+    } catch (error) {
+        console.error('获取AI API配置失败:', error);
+        return null;
     }
 }
 

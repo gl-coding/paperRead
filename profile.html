@@ -152,6 +152,48 @@
                 </div>
             </div>
 
+            <!-- AI API 配置 - 简洁版 -->
+            <div class="ai-config-compact">
+                <div class="config-compact-header" onclick="toggleAiConfig()">
+                    <h3>🤖 AI API 配置</h3>
+                    <button class="btn-expand" id="expandConfigBtn">▼</button>
+                </div>
+                <div class="config-compact-content" id="aiConfigContent" style="display: none;">
+                    <div class="config-row">
+                        <select id="aiProvider" class="config-select">
+                            <option value="">选择服务商</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="claude">Claude</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="deepseek">DeepSeek 🇨🇳</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                        <div class="api-key-compact-wrapper">
+                            <input type="password" id="aiApiKey" class="config-input-compact" placeholder="输入API密钥">
+                            <button type="button" class="btn-toggle-compact" id="toggleApiKeyBtn" title="显示/隐藏">👁️</button>
+                        </div>
+                    </div>
+                    <div class="config-row" id="customApiUrlGroup" style="display: none;">
+                        <input type="url" id="customApiUrl" class="config-input-compact" placeholder="自定义API地址" style="flex: 1;">
+                    </div>
+                    <div class="config-status-compact" id="configStatus" style="display: none;">
+                        <span class="status-icon"></span>
+                        <span class="status-text"></span>
+                    </div>
+                    <div class="config-actions-compact">
+                        <button class="btn-compact btn-test" id="testApiBtn">🧪 测试</button>
+                        <button class="btn-compact btn-save" id="saveApiConfigBtn">💾 保存</button>
+                        <button class="btn-compact btn-clear" id="clearApiConfigBtn">🗑️ 清除</button>
+                        <a href="#" class="btn-help" onclick="toggleHelp(event)">❓</a>
+                    </div>
+                    <div class="config-help-compact" id="configHelp" style="display: none;">
+                        <p><strong>快速指南：</strong></p>
+                        <p>• <a href="https://platform.openai.com/" target="_blank">OpenAI</a> | <a href="https://console.anthropic.com/" target="_blank">Claude</a> | <a href="https://platform.deepseek.com/" target="_blank">DeepSeek 🇨🇳</a></p>
+                        <p>• API密钥仅存储在本地浏览器</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- 最近阅读 -->
             <div class="recent-section">
                 <h3 class="section-title">最近阅读</h3>

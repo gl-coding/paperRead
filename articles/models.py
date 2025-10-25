@@ -26,6 +26,7 @@ class Article(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     is_active = models.BooleanField(default=True, verbose_name='是否启用')
     is_recommended = models.BooleanField(default=False, verbose_name='是否推荐')
+    author = models.CharField(max_length=50, default='admin', verbose_name='作者')
 
     class Meta:
         db_table = 'articles'
@@ -101,3 +102,95 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.username} - {self.article.title}"
+
+
+class GrammarArticle(models.Model):
+    """语法文章模型（系统管理的语法教学文章）"""
+    title = models.CharField(max_length=200, verbose_name='标题')
+    content = models.TextField(verbose_name='文章内容')
+    source = models.CharField(max_length=200, blank=True, null=True, verbose_name='来源')
+    difficulty = models.CharField(
+        max_length=20,
+        choices=[
+            ('beginner', '初级'),
+            ('intermediate', '中级'),
+            ('advanced', '高级'),
+        ],
+        default='intermediate',
+        verbose_name='难度'
+    )
+    category = models.CharField(max_length=50, blank=True, null=True, verbose_name='分类')
+    word_count = models.IntegerField(default=0, verbose_name='单词数')
+    paragraph_count = models.IntegerField(default=0, verbose_name='段落数')
+    paragraphs = models.JSONField(default=list, blank=True, verbose_name='段落数据')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    author = models.CharField(max_length=50, default='admin', verbose_name='作者')
+
+    class Meta:
+        db_table = 'grammar_articles'
+        verbose_name = '语法文章'
+        verbose_name_plural = '语法文章'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        # 自动计算单词数和段落数，并存储段落数据
+        if self.content:
+            import re
+            words = re.findall(r'\b[a-zA-Z]+\b', self.content)
+            self.word_count = len(words)
+            # 分割并存储段落
+            paragraphs_list = [p.strip() for p in self.content.split('\n\n') if p.strip()]
+            self.paragraph_count = len(paragraphs_list)
+            self.paragraphs = paragraphs_list  # 存储段落数组
+        super().save(*args, **kwargs)
+
+
+class UserGrammarArticle(models.Model):
+    """用户创建的语法文章"""
+    title = models.CharField(max_length=200, verbose_name='标题')
+    content = models.TextField(verbose_name='文章内容')
+    source = models.CharField(max_length=200, blank=True, null=True, verbose_name='来源')
+    difficulty = models.CharField(
+        max_length=20,
+        choices=[
+            ('beginner', '初级'),
+            ('intermediate', '中级'),
+            ('advanced', '高级'),
+        ],
+        default='intermediate',
+        verbose_name='难度'
+    )
+    category = models.CharField(max_length=50, blank=True, null=True, verbose_name='分类')
+    word_count = models.IntegerField(default=0, verbose_name='单词数')
+    paragraph_count = models.IntegerField(default=0, verbose_name='段落数')
+    paragraphs = models.JSONField(default=list, blank=True, verbose_name='段落数据')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    author = models.CharField(max_length=50, default='guest', verbose_name='作者')
+
+    class Meta:
+        db_table = 'user_grammar_articles'
+        verbose_name = '用户语法文章'
+        verbose_name_plural = '用户语法文章'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.author}"
+
+    def save(self, *args, **kwargs):
+        # 自动计算单词数和段落数，并存储段落数据
+        if self.content:
+            import re
+            words = re.findall(r'\b[a-zA-Z]+\b', self.content)
+            self.word_count = len(words)
+            # 分割并存储段落
+            paragraphs_list = [p.strip() for p in self.content.split('\n\n') if p.strip()]
+            self.paragraph_count = len(paragraphs_list)
+            self.paragraphs = paragraphs_list  # 存储段落数组
+        super().save(*args, **kwargs)

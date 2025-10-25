@@ -7,7 +7,7 @@ let totalPages = 1;
 let currentArticleId = null;
 let deleteArticleId = null;
 let uploadedFile = null;
-let currentTab = 'recommended'; // 当前选中的tab: recommended, favorite, reading
+let currentTab = 'grammar'; // 当前选中的tab: grammar（语法文章）, mine（我的文章）
 
 // DOM元素
 const articlesList = document.getElementById('articlesList');
@@ -142,6 +142,16 @@ async function loadArticles(page = 1) {
     try {
         articlesList.innerHTML = '<div class="loading">加载中...</div>';
 
+        // 根据当前tab选择不同的API端点
+        let apiUrl = '';
+        if (currentTab === 'grammar') {
+            // 语法tab：使用grammar-articles API（系统语法文章）
+            apiUrl = `${API_BASE_URL}/grammar-articles/`;
+        } else if (currentTab === 'mine') {
+            // 我的tab：使用user-grammar-articles API（用户语法文章）
+            apiUrl = `${API_BASE_URL}/user-grammar-articles/`;
+        }
+
         const params = new URLSearchParams({
             page: page,
             page_size: 10
@@ -150,14 +160,6 @@ async function loadArticles(page = 1) {
         // 始终添加用户名参数（用于获取阅读信息）
         const username = localStorage.getItem('paperread_username') || 'guest';
         params.append('username', username);
-
-        // 添加tab参数
-        if (currentTab === 'favorite') {
-            params.append('is_favorite', 'true');
-        } else if (currentTab === 'reading') {
-            params.append('is_read', 'true');
-        }
-        // 推荐tab不添加任何筛选参数，显示全部文章
 
         // 添加搜索参数
         const search = searchInput.value.trim();
@@ -170,7 +172,7 @@ async function loadArticles(page = 1) {
         const category = categoryFilter.value;
         if (category) params.append('category', category);
 
-        const response = await fetch(`${API_BASE_URL}/articles/?${params}`);
+        const response = await fetch(`${apiUrl}?${params}`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
@@ -241,6 +243,17 @@ function displayArticles(articles) {
                     <span>📅 ${formatDate(article.created_at)}</span>
                     ${article.updated_at ? `<span class="meta-separator">•</span><span>✏️ ${formatDate(article.updated_at)}</span>` : ''}
                 </div>
+            </div>
+            <div class="article-actions">
+                <button class="btn-action btn-view" onclick="openReadingMode(${article.id})" title="查看文章">
+                    👁️ 查看
+                </button>
+                <button class="btn-action btn-edit" onclick="editArticle(${article.id})" title="编辑文章">
+                    ✏️ 编辑
+                </button>
+                <button class="btn-action btn-delete" onclick="confirmDeleteArticle(${article.id})" title="删除文章">
+                    🗑️ 删除
+                </button>
             </div>
         </div>
     `;
@@ -397,10 +410,23 @@ function openNewArticleModal() {
     articleModal.style.display = 'flex';
 }
 
+// 打开创建文章模态框（别名函数，供按钮调用）
+function openCreateModal() {
+    openNewArticleModal();
+}
+
 // 编辑文章
 async function editArticle(id) {
     try {
-        const response = await fetch(`${API_BASE_URL}/articles/${id}/`);
+        // 根据当前tab选择不同的API端点
+        let apiEndpoint = '';
+        if (currentTab === 'grammar') {
+            apiEndpoint = 'grammar-articles';
+        } else if (currentTab === 'mine') {
+            apiEndpoint = 'user-grammar-articles';
+        }
+
+        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${id}/`);
         const article = await response.json();
 
         document.getElementById('modalTitle').textContent = '编辑文章';
@@ -423,12 +449,22 @@ async function editArticle(id) {
 async function handleArticleSubmit(e) {
     e.preventDefault();
 
+    // 根据当前tab选择不同的API端点
+    let apiEndpoint = '';
+    if (currentTab === 'grammar') {
+        apiEndpoint = 'grammar-articles';
+    } else if (currentTab === 'mine') {
+        apiEndpoint = 'user-grammar-articles';
+    }
+
+    const username = localStorage.getItem('paperread_username') || 'guest';
     const articleData = {
         title: articleTitle.value.trim(),
         content: articleContent.value.trim(),
         difficulty: articleDifficulty.value,
         category: articleCategory.value.trim() || null,
-        source: articleSource.value.trim() || null
+        source: articleSource.value.trim() || null,
+        author: username  // 设置作者为当前用户
     };
 
     try {
@@ -438,7 +474,7 @@ async function handleArticleSubmit(e) {
         let response;
         if (currentArticleId) {
             // 更新
-            response = await fetch(`${API_BASE_URL}/articles/${currentArticleId}/`, {
+            response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${currentArticleId}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -447,7 +483,7 @@ async function handleArticleSubmit(e) {
             });
         } else {
             // 创建
-            response = await fetch(`${API_BASE_URL}/articles/`, {
+            response = await fetch(`${API_BASE_URL}/${apiEndpoint}/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -571,11 +607,13 @@ async function handleUploadConfirm() {
         return;
     }
 
+    const username = localStorage.getItem('paperread_username') || 'guest';
     const articleData = {
         title: title,
         content: content,
         difficulty: uploadDifficulty.value,
-        source: '文件上传'
+        source: '文件上传',
+        author: username  // 设置作者为当前用户
     };
 
     try {
@@ -622,10 +660,18 @@ function closeDeleteModalFunc() {
 // 执行删除
 async function handleDeleteConfirm() {
     try {
+        // 根据当前tab选择不同的API端点
+        let apiEndpoint = '';
+        if (currentTab === 'grammar') {
+            apiEndpoint = 'grammar-articles';
+        } else if (currentTab === 'mine') {
+            apiEndpoint = 'user-grammar-articles';
+        }
+
         confirmDelete.disabled = true;
         confirmDelete.textContent = '删除中...';
 
-        const response = await fetch(`${API_BASE_URL}/articles/${deleteArticleId}/`, {
+        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/${deleteArticleId}/`, {
             method: 'DELETE'
         });
 
@@ -732,5 +778,106 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// AI生成内容
+async function generateContent() {
+    const aiPrompt = document.getElementById('aiPrompt');
+    const articleContent = document.getElementById('articleContent');
+    const generateBtn = document.getElementById('generateBtn');
+    const generateStatus = document.getElementById('generateStatus');
+    
+    const prompt = aiPrompt.value.trim();
+    
+    if (!prompt) {
+        alert('请输入提示词');
+        return;
+    }
+    
+    // 获取AI API配置
+    let aiConfig = null;
+    try {
+        const configStr = localStorage.getItem('paperread_ai_config');
+        if (configStr) {
+            aiConfig = JSON.parse(configStr);
+        }
+    } catch (error) {
+        console.error('读取AI配置失败:', error);
+    }
+    
+    // 如果没有配置，提示用户
+    if (!aiConfig || !aiConfig.provider || !aiConfig.apiKey) {
+        if (confirm('您还没有配置AI API。是否前往个人中心配置？')) {
+            window.location.href = 'profile.html';
+        }
+        return;
+    }
+    
+    try {
+        // 根据当前tab选择不同的API端点
+        let apiEndpoint = '';
+        if (currentTab === 'grammar') {
+            apiEndpoint = 'grammar-articles';
+        } else if (currentTab === 'mine') {
+            apiEndpoint = 'user-grammar-articles';
+        }
+
+        // 禁用按钮并显示状态
+        generateBtn.disabled = true;
+        generateStatus.style.display = 'flex';
+        generateStatus.querySelector('.status-text').textContent = '正在生成中...';
+        
+        // 调用后端API生成内容，传递AI配置
+        const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/generate_content/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                prompt: prompt,
+                ai_config: aiConfig  // 传递AI配置给后端
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('生成失败');
+        }
+        
+        const data = await response.json();
+        
+        // 将生成的内容填充到文章内容框
+        if (data.content) {
+            articleContent.value = data.content;
+            updateContentStats();
+            
+            // 更新状态
+            generateStatus.querySelector('.status-icon').textContent = '✅';
+            generateStatus.querySelector('.status-text').textContent = '生成成功！';
+            generateStatus.style.color = '#4caf50';
+            
+            // 3秒后隐藏状态
+            setTimeout(() => {
+                generateStatus.style.display = 'none';
+                generateStatus.querySelector('.status-icon').textContent = '⏳';
+                generateStatus.style.color = '#4caf50';
+            }, 3000);
+        }
+        
+    } catch (error) {
+        console.error('生成内容失败:', error);
+        
+        // 显示错误状态
+        generateStatus.querySelector('.status-icon').textContent = '❌';
+        generateStatus.querySelector('.status-text').textContent = '生成失败，请重试';
+        generateStatus.style.color = '#f44336';
+        
+        setTimeout(() => {
+            generateStatus.style.display = 'none';
+            generateStatus.querySelector('.status-icon').textContent = '⏳';
+            generateStatus.style.color = '#4caf50';
+        }, 3000);
+    } finally {
+        generateBtn.disabled = false;
+    }
 }
 
