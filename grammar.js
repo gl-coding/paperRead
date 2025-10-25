@@ -180,8 +180,9 @@ async function loadArticleContent(articleId, page = 1) {
     try {
         paragraphsPerPage = parseInt(localStorage.getItem('maxParagraphs') || '8');
         
+        // 修改为使用语法文章API
         const response = await fetch(
-            `${API_BASE_URL}/articles/${articleId}/content_paginated/?page=${page}&page_size=${paragraphsPerPage}`
+            `${API_BASE_URL}/grammar-articles/${articleId}/content_paginated/?page=${page}&page_size=${paragraphsPerPage}`
         );
         
         if (!response.ok) {
@@ -806,6 +807,12 @@ function updateSidebarHighlight() {
 
 // 更新单词列表
 function updateWordList() {
+    // 英语语法页面没有wordList元素，直接返回
+    if (!wordList) {
+        console.log('英语语法页面不显示单词列表');
+        return;
+    }
+    
     if (wordsData.size === 0) {
         wordList.innerHTML = '<p class="empty-state">暂无单词</p>';
         return;
@@ -882,6 +889,12 @@ function updateWordList() {
 
 // 更新统计信息
 function updateStats() {
+    // 英语语法页面仍有这些统计元素，所以需要更新
+    if (!wordCount || !uniqueWordCount) {
+        console.log('统计元素不存在，跳过更新');
+        return;
+    }
+    
     const total = Array.from(wordsData.values()).reduce((sum, freq) => sum + freq, 0);
     wordCount.textContent = `总词数: ${total}`;
     uniqueWordCount.textContent = `不同单词: ${wordsData.size}`;
@@ -1114,53 +1127,44 @@ function showOfflineTranslation() {
 // 从URL加载文章
 async function loadArticleFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    let articleId = urlParams.get('article');
+    let articleId = urlParams.get('id') || urlParams.get('article');
     
-    // 如果URL中没有指定文章ID，则加载第一篇文章
+    // 如果URL中没有指定文章ID，不加载任何文章，等待用户从目录选择
     if (!articleId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/articles/?page_size=1`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.results && data.results.length > 0) {
-                    articleId = data.results[0].id;
-                }
-            }
-        } catch (error) {
-            console.error('获取默认文章失败:', error);
-        }
+        console.log('未指定文章ID，等待用户从目录选择文章');
+        return;
     }
     
-    if (articleId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/articles/${articleId}/`);
-            if (response.ok) {
-                const article = await response.json();
-                currentArticleId = article.id;
-                currentParagraphCount = article.paragraph_count || 0;
-                
-                // 获取上次阅读的页码
-                const savedPage = getReadingProgress(articleId);
-                
-                // 使用后端分页加载文章内容（跳转到上次阅读的页面）
-                await loadArticleContent(articleId, savedPage);
-                
-                // 加载用户的标注
-                await loadAnnotationsFromServer(articleId);
-                
-                // 记录阅读历史
-                await recordReadingHistory(articleId);
-                
-                // 如果不是第一页，显示提示
-                if (savedPage > 1) {
-                    showReadingProgressNotification(savedPage);
-                }
-            } else {
-                console.error('加载文章失败');
+    // 加载指定的语法文章
+    try {
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${articleId}/`);
+        if (response.ok) {
+            const article = await response.json();
+            currentArticleId = article.id;
+            currentParagraphCount = article.paragraph_count || 0;
+            
+            // 获取上次阅读的页码
+            const savedPage = getReadingProgress(articleId);
+            
+            // 使用后端分页加载文章内容（跳转到上次阅读的页面）
+            await loadArticleContent(articleId, savedPage);
+            
+            // 加载用户的标注
+            await loadAnnotationsFromServer(articleId);
+            
+            // 记录阅读历史
+            await recordReadingHistory(articleId);
+            
+            // 如果不是第一页，显示提示
+            if (savedPage > 1) {
+                showReadingProgressNotification(savedPage);
             }
-        } catch (error) {
-            console.error('加载文章失败:', error);
+        } else {
+            console.error('加载文章失败: HTTP', response.status);
         }
+    } catch (error) {
+        console.error('加载文章失败:', error);
+        // 不显示alert，只在控制台记录错误
     }
 }
 
@@ -1205,7 +1209,8 @@ function showReadingProgressNotification(page) {
 async function loadAnnotationsFromServer(articleId) {
     try {
         const username = getUsername();
-        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/annotations/?username=${encodeURIComponent(username)}`);
+        // 尝试加载语法文章的标注（暂时可能不支持，静默失败）
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${articleId}/annotations/?username=${encodeURIComponent(username)}`);
         if (response.ok) {
             const annotations = await response.json();
             
@@ -1224,7 +1229,8 @@ async function loadAnnotationsFromServer(articleId) {
             updateWordList();
         }
     } catch (error) {
-        console.error('加载标注失败:', error);
+        // 静默失败，标注功能暂时可能不支持语法文章
+        console.log('语法文章标注功能暂未完全实现');
     }
 }
 
@@ -1239,7 +1245,8 @@ async function saveAnnotationsToServer() {
             color
         }));
         
-        const response = await fetch(`${API_BASE_URL}/articles/${currentArticleId}/save_annotations/`, {
+        // 尝试保存语法文章的标注（暂时可能不支持，静默失败）
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${currentArticleId}/save_annotations/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1255,7 +1262,8 @@ async function saveAnnotationsToServer() {
         }
         console.log('标注已保存');
     } catch (error) {
-        console.error('保存标注失败:', error);
+        // 静默失败，标注功能暂时可能不支持语法文章
+        console.log('语法文章标注保存功能暂未完全实现');
     }
 }
 
@@ -1264,7 +1272,8 @@ async function recordReadingHistory(articleId) {
     try {
         const username = getUsername();
         
-        const response = await fetch(`${API_BASE_URL}/articles/${articleId}/record_reading/`, {
+        // 修改为使用语法文章API
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${articleId}/record_reading/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1510,7 +1519,8 @@ async function loadCatalog() {
     try {
         catalogTree.innerHTML = '<p class="empty-state">加载中...</p>';
         
-        const response = await fetch(`${API_BASE_URL}/articles/?page_size=100`);
+        // 修改为加载语法文章（系统语法文章）
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/?page_size=100`);
         
         if (!response.ok) {
             throw new Error('加载文章列表失败');
