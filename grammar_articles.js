@@ -700,7 +700,14 @@ async function handleDeleteConfirm() {
 
 // 打开阅读模式
 function openReadingMode(id) {
-    window.location.href = `index.html?article=${id}`;
+    // 根据当前tab决定跳转到哪个页面
+    if (currentTab === 'grammar') {
+        // 语法tab：跳转到英语语法页面查看系统语法文章
+        window.location.href = `grammar.html?id=${id}`;
+    } else {
+        // 我的tab：跳转到文章阅读页面查看用户文章
+        window.location.href = `index.html?article=${id}`;
+    }
 }
 
 // 工具函数

@@ -37,15 +37,19 @@ let catalogData = {}; // 存储文章目录数据 {category: [articles]}
 
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
+const articleTitle = document.getElementById('articleTitle');
 const wordList = document.getElementById('wordList');
 // const wordCount = document.getElementById('wordCount');  // 已移除统计元素
 // const uniqueWordCount = document.getElementById('uniqueWordCount');  // 已移除统计元素
 const wordCount = null;  // 统计元素已从页面移除
 const uniqueWordCount = null;  // 统计元素已从页面移除
-const translateBtn = document.getElementById('translateBtn');
+// const translateBtn = document.getElementById('translateBtn');  // 已移除翻译按钮
+// const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');  // 已移除隐藏标注按钮
+// const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');  // 已移除隐藏翻译按钮
+const translateBtn = null;  // 翻译按钮已移除
+const toggleAnnotationsBtn = null;  // 隐藏标注按钮已移除
+const toggleTranslationsBtn = null;  // 隐藏翻译按钮已移除
 const clearAllBtn = document.getElementById('clearAllBtn');
-const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');
-const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');
 const annotationModeToggle = document.getElementById('annotationModeToggle');
 const sentenceAnnotationModeToggle = document.getElementById('sentenceAnnotationModeToggle');
 const translationModeToggle = document.getElementById('translationModeToggle');
@@ -87,10 +91,10 @@ Education is another field where AI is making significant contributions. Persona
 Looking forward, the future of artificial intelligence appears boundless. As technology continues to advance, we can expect AI to play an even more prominent role in solving complex global challenges, from climate change to space exploration. The key is to harness this powerful technology in ways that benefit humanity as a whole.`;
 
 // 事件监听器
-translateBtn.addEventListener('click', handleTranslate);
+// translateBtn.addEventListener('click', handleTranslate);  // 翻译按钮已移除
 clearAllBtn.addEventListener('click', handleClearAll);
-toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);
-toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);
+// toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);  // 隐藏标注按钮已移除
+// toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);  // 隐藏翻译按钮已移除
 annotationModeToggle.addEventListener('change', toggleAnnotationMode);
 sentenceAnnotationModeToggle.addEventListener('change', toggleSentenceAnnotationMode);
 translationModeToggle.addEventListener('change', toggleTranslationMode);
@@ -204,8 +208,8 @@ async function loadArticleContent(articleId, page = 1) {
         // 隐藏之前的翻译
         hideTranslation();
         
-        // 启用翻译按钮
-        translateBtn.disabled = false;
+        // 启用翻译按钮（已移除）
+        // translateBtn.disabled = false;
         
         // 提取单词（只提取当前页的单词）
         extractWords(text);
@@ -345,7 +349,7 @@ function clearArticle() {
     translatedWords.clear(); // 清空翻译
     wordTranslations.clear(); // 清空翻译缓存
     hideTranslation();
-    translateBtn.disabled = true;
+    // translateBtn.disabled = true;  // 翻译按钮已移除
     updateWordList();
     updateStats();
 }
@@ -485,33 +489,33 @@ function toggleTranslationMode(e) {
     }
 }
 
-// 切换标注显示/隐藏
+// 切换标注显示/隐藏（按钮已移除，保留函数以备后用）
 function toggleAnnotationsVisibility() {
     annotationsHidden = !annotationsHidden;
     
     if (annotationsHidden) {
         // 隐藏标注
         articleDisplay.classList.add('hide-annotations');
-        toggleAnnotationsBtn.textContent = '显示标注';
+        // toggleAnnotationsBtn.textContent = '显示标注';  // 按钮已移除
     } else {
         // 显示标注
         articleDisplay.classList.remove('hide-annotations');
-        toggleAnnotationsBtn.textContent = '隐藏标注';
+        // toggleAnnotationsBtn.textContent = '隐藏标注';  // 按钮已移除
     }
 }
 
-// 切换翻译显示/隐藏
+// 切换翻译显示/隐藏（按钮已移除，保留函数以备后用）
 function toggleTranslationsVisibility() {
     translationsHidden = !translationsHidden;
     
     if (translationsHidden) {
         // 隐藏翻译
         articleDisplay.classList.add('hide-translations');
-        toggleTranslationsBtn.textContent = '显示翻译';
+        // toggleTranslationsBtn.textContent = '显示翻译';  // 按钮已移除
     } else {
         // 显示翻译
         articleDisplay.classList.remove('hide-translations');
-        toggleTranslationsBtn.textContent = '隐藏翻译';
+        // toggleTranslationsBtn.textContent = '隐藏翻译';  // 按钮已移除
     }
 }
 
@@ -988,8 +992,10 @@ async function handleTranslate() {
     const existingTranslations = document.querySelectorAll('.translation-line');
     if (existingTranslations.length > 0) {
         existingTranslations.forEach(el => el.remove());
-        translateBtn.textContent = '翻译中文';
-        translateBtn.classList.remove('active');
+        if (translateBtn) {
+            translateBtn.textContent = '翻译中文';
+            translateBtn.classList.remove('active');
+        }
         return;
     }
     
@@ -998,14 +1004,18 @@ async function handleTranslate() {
     if (translationCache.has(currentArticleText)) {
         translatedParagraphs = translationCache.get(currentArticleText);
         displayInlineTranslation(translatedParagraphs);
-        translateBtn.textContent = '隐藏翻译';
-        translateBtn.classList.add('active');
+        if (translateBtn) {
+            translateBtn.textContent = '隐藏翻译';
+            translateBtn.classList.add('active');
+        }
         return;
     }
     
     // 显示加载状态
-    translateBtn.disabled = true;
-    translateBtn.textContent = '翻译中...';
+    if (translateBtn) {
+        translateBtn.disabled = true;
+        translateBtn.textContent = '翻译中...';
+    }
     
     try {
         // 使用免费的翻译API（MyMemory Translation API）
@@ -1017,14 +1027,18 @@ async function handleTranslate() {
         // 显示内联翻译
         displayInlineTranslation(translatedParagraphs);
         
-        translateBtn.textContent = '隐藏翻译';
-        translateBtn.classList.add('active');
-        translateBtn.disabled = false;
+        if (translateBtn) {
+            translateBtn.textContent = '隐藏翻译';
+            translateBtn.classList.add('active');
+            translateBtn.disabled = false;
+        }
     } catch (error) {
         console.error('翻译错误:', error);
         alert('翻译失败：网络连接问题或API限额已用完。\n\n建议：\n1. 使用浏览器内置翻译功能\n2. 复制文本到其他翻译工具\n3. 稍后重试');
-        translateBtn.disabled = false;
-        translateBtn.textContent = '翻译中文';
+        if (translateBtn) {
+            translateBtn.disabled = false;
+            translateBtn.textContent = '翻译中文';
+        }
     }
 }
 
@@ -1094,8 +1108,10 @@ function displayInlineTranslation(translatedParagraphs) {
 function hideTranslation() {
     const existingTranslations = document.querySelectorAll('.translation-line');
     existingTranslations.forEach(el => el.remove());
-    translateBtn.textContent = '翻译中文';
-    translateBtn.classList.remove('active');
+    if (translateBtn) {
+        translateBtn.textContent = '翻译中文';
+        translateBtn.classList.remove('active');
+    }
 }
 
 // 离线简易翻译（词对词翻译，仅作为备用）
@@ -1144,6 +1160,11 @@ async function loadArticleFromURL() {
             const article = await response.json();
             currentArticleId = article.id;
             currentParagraphCount = article.paragraph_count || 0;
+            
+            // 更新文章标题
+            if (articleTitle && article.title) {
+                articleTitle.textContent = article.title;
+            }
             
             // 获取上次阅读的页码
             const savedPage = getReadingProgress(articleId);
@@ -1623,6 +1644,20 @@ async function loadArticleById(articleId) {
     // 更新当前文章ID
     currentArticleId = articleId;
     
+    // 获取文章信息（包括标题）
+    try {
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${articleId}/`);
+        if (response.ok) {
+            const article = await response.json();
+            // 更新文章标题
+            if (articleTitle && article.title) {
+                articleTitle.textContent = article.title;
+            }
+        }
+    } catch (error) {
+        console.error('获取文章信息失败:', error);
+    }
+    
     // 更新活动状态
     document.querySelectorAll('.article-item').forEach(item => {
         item.classList.remove('active');
@@ -1636,9 +1671,23 @@ async function loadArticleById(articleId) {
 }
 
 // 选择文章（从点击事件触发）
-function selectArticle(articleId) {
+async function selectArticle(articleId) {
     // 更新当前文章ID
     currentArticleId = articleId;
+    
+    // 获取文章信息（包括标题）
+    try {
+        const response = await fetch(`${API_BASE_URL}/grammar-articles/${articleId}/`);
+        if (response.ok) {
+            const article = await response.json();
+            // 更新文章标题
+            if (articleTitle && article.title) {
+                articleTitle.textContent = article.title;
+            }
+        }
+    } catch (error) {
+        console.error('获取文章信息失败:', error);
+    }
     
     // 更新活动状态
     document.querySelectorAll('.article-item').forEach(item => {
@@ -1649,7 +1698,7 @@ function selectArticle(articleId) {
     }
     
     // 加载文章内容
-    loadArticleContent(articleId, 1);
+    await loadArticleContent(articleId, 1);
 }
 
 // HTML转义
@@ -1668,8 +1717,8 @@ if (refreshCatalog) {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('英语语法页面已加载');
     
-    // 初始禁用翻译按钮
-    translateBtn.disabled = true;
+    // 初始禁用翻译按钮（按钮已移除）
+    // translateBtn.disabled = true;
     
     // 加载文章目录，获取第一篇文章的ID
     const firstArticleId = await loadCatalog();
