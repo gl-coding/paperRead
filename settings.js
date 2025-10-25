@@ -189,6 +189,7 @@ function loadNavSettings() {
         articles: true,
         grammar: true,
         grammar_articles: true,
+        writing: true,
         words: true,
         dictation: true,
         profile: true,
