@@ -188,12 +188,35 @@ function getReadingProgress(articleId) {
 // 加载文章内容（全部使用后端分页）
 async function loadArticleContent(articleId, page = 1) {
     try {
-        paragraphsPerPage = parseInt(localStorage.getItem('maxParagraphs') || '8');
+        // 获取分页配置
+        const paginationMode = localStorage.getItem('paginationMode') || 'smart';
+        const paginationConfig = JSON.parse(localStorage.getItem('paginationConfig') || '{}');
+        const defaultConfig = {
+            targetChars: 4000,
+            minChars: 2000,
+            maxChars: 8000,
+            minParagraphs: 2,
+            maxParagraphs: 15
+        };
+        const config = { ...defaultConfig, ...paginationConfig };
         
-        // 修改为使用语法文章API
-        const response = await fetch(
-            `${API_BASE_URL}/grammar-articles/${articleId}/content_paginated/?page=${page}&page_size=${paragraphsPerPage}`
-        );
+        // 构建API URL
+        let url = `${API_BASE_URL}/grammar-articles/${articleId}/content_paginated/?page=${page}&mode=${paginationMode}`;
+        
+        if (paginationMode === 'smart') {
+            // 智能分页：传递字符数参数
+            url += `&target_chars=${config.targetChars}`;
+            url += `&min_chars=${config.minChars}`;
+            url += `&max_chars=${config.maxChars}`;
+            url += `&min_paragraphs=${config.minParagraphs}`;
+            url += `&max_paragraphs=${config.maxParagraphs}`;
+        } else {
+            // 固定分页：传递段落数参数
+            const fixedPageSize = parseInt(localStorage.getItem('fixedPageSize') || '8');
+            url += `&page_size=${fixedPageSize}`;
+        }
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
             throw new Error('获取分页内容失败');

@@ -141,6 +141,52 @@ body {
     border-color: #667eea;
 }
 
+/* 智能分页控件样式 */
+.smart-pagination-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.pagination-param {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pagination-param label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #555;
+    min-width: 120px;
+}
+
+.pagination-param input[type="number"] {
+    width: 100px;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.pagination-param input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.param-hint {
+    font-size: 0.85rem;
+    color: #999;
+    font-style: italic;
+}
+
 /* 开关按钮 */
 .switch {
     position: relative;

@@ -167,10 +167,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def content_paginated(self, request, pk=None):
-        """分页获取文章内容（使用存储的段落数据）"""
+        """分页获取文章内容（支持智能分页）"""
         article = self.get_object()
         page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 8))
+        
+        # 获取分页配置（支持按字符数智能分页）
+        pagination_mode = request.query_params.get('mode', 'smart')  # smart 或 fixed
+        target_chars = int(request.query_params.get('target_chars', 4000))
+        min_chars = int(request.query_params.get('min_chars', 2000))
+        max_chars = int(request.query_params.get('max_chars', 8000))
+        min_paragraphs = int(request.query_params.get('min_paragraphs', 2))
+        max_paragraphs = int(request.query_params.get('max_paragraphs', 15))
         
         # 使用存储的段落数据（如果没有则实时分割并保存）
         if not article.paragraphs or len(article.paragraphs) == 0:
@@ -182,27 +189,112 @@ class ArticleViewSet(viewsets.ModelViewSet):
         else:
             paragraphs = article.paragraphs
         
-        # 使用Django的分页器
-        paginator = Paginator(paragraphs, page_size)
+        # 根据模式选择分页方式
+        if pagination_mode == 'smart':
+            # 智能分页：按字符数
+            pages = self._smart_paginate(
+                paragraphs,
+                target_chars=target_chars,
+                min_chars=min_chars,
+                max_chars=max_chars,
+                min_paragraphs=min_paragraphs,
+                max_paragraphs=max_paragraphs
+            )
+        else:
+            # 固定分页：按段落数（兼容旧方式）
+            page_size = int(request.query_params.get('page_size', 8))
+            paginator = Paginator(paragraphs, page_size)
+            pages = [list(paginator.get_page(i).object_list) for i in range(1, paginator.num_pages + 1)]
         
-        try:
-            page_obj = paginator.get_page(page)
-        except Exception:
-            page_obj = paginator.get_page(1)
+        # 获取指定页
+        total_pages = len(pages)
+        if page < 1:
+            page = 1
+        elif page > total_pages:
+            page = total_pages
+        
+        current_page_paragraphs = pages[page - 1] if pages else []
+        
+        # 计算当前页的字符数
+        current_page_chars = sum(len(p) for p in current_page_paragraphs)
         
         return Response({
             'current_page': page,
-            'total_pages': paginator.num_pages,
+            'total_pages': total_pages,
             'total_paragraphs': len(paragraphs),
-            'paragraphs': list(page_obj),
-            'has_next': page_obj.has_next(),
-            'has_previous': page_obj.has_previous(),
+            'paragraphs': current_page_paragraphs,
+            'has_next': page < total_pages,
+            'has_previous': page > 1,
+            # 页面信息
+            'page_info': {
+                'paragraph_count': len(current_page_paragraphs),
+                'char_count': current_page_chars,
+                'pagination_mode': pagination_mode
+            },
             # 基本文章信息
             'article_id': article.id,
             'article_title': article.title,
             'word_count': article.word_count,
             'paragraph_count': article.paragraph_count
         })
+    
+    def _smart_paginate(self, paragraphs, target_chars=4000, min_chars=2000, 
+                       max_chars=8000, min_paragraphs=2, max_paragraphs=15):
+        """
+        智能分页算法：按目标字符数分页，同时保持段落完整性
+        
+        参数:
+            paragraphs: 段落列表
+            target_chars: 目标字符数（每页理想长度）
+            min_chars: 最少字符数（避免页面太短）
+            max_chars: 最多字符数（避免页面太长）
+            min_paragraphs: 最少段落数（避免单段过长）
+            max_paragraphs: 最多段落数（避免段落过多）
+        
+        返回:
+            分页后的段落列表 [[page1_paragraphs], [page2_paragraphs], ...]
+        """
+        pages = []
+        current_page = []
+        current_length = 0
+        
+        for paragraph in paragraphs:
+            para_length = len(paragraph.strip())
+            
+            if para_length == 0:  # 跳过空段落
+                continue
+            
+            # 判断是否应该分页
+            should_paginate = False
+            
+            # 条件1：达到最大段落数
+            if len(current_page) >= max_paragraphs:
+                should_paginate = True
+            
+            # 条件2：加上当前段落会超过最大字符数
+            elif current_length + para_length > max_chars and len(current_page) >= min_paragraphs:
+                should_paginate = True
+            
+            # 条件3：已达到目标字符数且至少有最少段落数
+            elif (len(current_page) >= min_paragraphs and 
+                  current_length >= target_chars):
+                should_paginate = True
+            
+            # 执行分页
+            if should_paginate and current_page:
+                pages.append(current_page)
+                current_page = []
+                current_length = 0
+            
+            # 添加段落到当前页
+            current_page.append(paragraph)
+            current_length += para_length
+        
+        # 添加最后一页
+        if current_page:
+            pages.append(current_page)
+        
+        return pages if pages else [[]]  # 确保至少返回一个空页
     
     @action(detail=True, methods=['post'])
     def toggle_favorite(self, request, pk=None):
@@ -663,10 +755,17 @@ Once configured, the system will generate professional grammar articles includin
 
     @action(detail=True, methods=['get'])
     def content_paginated(self, request, pk=None):
-        """分页获取语法文章内容"""
+        """分页获取语法文章内容（支持智能分页）"""
         article = self.get_object()
         page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 8))
+        
+        # 获取分页配置（支持按字符数智能分页）
+        pagination_mode = request.query_params.get('mode', 'smart')  # smart 或 fixed
+        target_chars = int(request.query_params.get('target_chars', 4000))
+        min_chars = int(request.query_params.get('min_chars', 2000))
+        max_chars = int(request.query_params.get('max_chars', 8000))
+        min_paragraphs = int(request.query_params.get('min_paragraphs', 2))
+        max_paragraphs = int(request.query_params.get('max_paragraphs', 15))
         
         # 使用存储的段落数据
         if not article.paragraphs or len(article.paragraphs) == 0:
@@ -678,26 +777,90 @@ Once configured, the system will generate professional grammar articles includin
         else:
             paragraphs = article.paragraphs
         
-        # 使用Django的分页器
-        paginator = Paginator(paragraphs, page_size)
+        # 根据模式选择分页方式
+        if pagination_mode == 'smart':
+            # 智能分页：按字符数
+            pages = self._smart_paginate(
+                paragraphs,
+                target_chars=target_chars,
+                min_chars=min_chars,
+                max_chars=max_chars,
+                min_paragraphs=min_paragraphs,
+                max_paragraphs=max_paragraphs
+            )
+        else:
+            # 固定分页：按段落数（兼容旧方式）
+            page_size = int(request.query_params.get('page_size', 8))
+            paginator = Paginator(paragraphs, page_size)
+            pages = [list(paginator.get_page(i).object_list) for i in range(1, paginator.num_pages + 1)]
         
-        try:
-            page_obj = paginator.get_page(page)
-        except Exception:
-            page_obj = paginator.get_page(1)
+        # 获取指定页
+        total_pages = len(pages)
+        if page < 1:
+            page = 1
+        elif page > total_pages:
+            page = total_pages
+        
+        current_page_paragraphs = pages[page - 1] if pages else []
+        
+        # 计算当前页的字符数
+        current_page_chars = sum(len(p) for p in current_page_paragraphs)
         
         return Response({
             'current_page': page,
-            'total_pages': paginator.num_pages,
+            'total_pages': total_pages,
             'total_paragraphs': len(paragraphs),
-            'paragraphs': list(page_obj),
-            'has_next': page_obj.has_next(),
-            'has_previous': page_obj.has_previous(),
+            'paragraphs': current_page_paragraphs,
+            'has_next': page < total_pages,
+            'has_previous': page > 1,
+            # 页面信息
+            'page_info': {
+                'paragraph_count': len(current_page_paragraphs),
+                'char_count': current_page_chars,
+                'pagination_mode': pagination_mode
+            },
+            # 基本文章信息
             'article_id': article.id,
             'article_title': article.title,
             'word_count': article.word_count,
             'paragraph_count': article.paragraph_count
         })
+    
+    def _smart_paginate(self, paragraphs, target_chars=4000, min_chars=2000, 
+                       max_chars=8000, min_paragraphs=2, max_paragraphs=15):
+        """智能分页算法（与ArticleViewSet相同）"""
+        pages = []
+        current_page = []
+        current_length = 0
+        
+        for paragraph in paragraphs:
+            para_length = len(paragraph.strip())
+            
+            if para_length == 0:
+                continue
+            
+            should_paginate = False
+            
+            if len(current_page) >= max_paragraphs:
+                should_paginate = True
+            elif current_length + para_length > max_chars and len(current_page) >= min_paragraphs:
+                should_paginate = True
+            elif (len(current_page) >= min_paragraphs and 
+                  current_length >= target_chars):
+                should_paginate = True
+            
+            if should_paginate and current_page:
+                pages.append(current_page)
+                current_page = []
+                current_length = 0
+            
+            current_page.append(paragraph)
+            current_length += para_length
+        
+        if current_page:
+            pages.append(current_page)
+        
+        return pages if pages else [[]]
 
     @action(detail=True, methods=['post'])
     def record_reading(self, request, pk=None):

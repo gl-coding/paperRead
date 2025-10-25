@@ -2,11 +2,21 @@
 document.addEventListener('DOMContentLoaded', function() {
     // 获取元素
     const defaultColor = document.getElementById('defaultColor');
-    const maxParagraphs = document.getElementById('maxParagraphs');
     const autoSave = document.getElementById('autoSave');
     const clearCacheBtn = document.getElementById('clearCacheBtn');
     const exportDataBtn = document.getElementById('exportDataBtn');
     const changelogBtn = document.getElementById('changelogBtn');
+    
+    // 分页设置元素
+    const paginationMode = document.getElementById('paginationMode');
+    const smartPaginationSettings = document.getElementById('smartPaginationSettings');
+    const fixedPaginationSettings = document.getElementById('fixedPaginationSettings');
+    const targetChars = document.getElementById('targetChars');
+    const minChars = document.getElementById('minChars');
+    const maxChars = document.getElementById('maxChars');
+    const minParagraphs = document.getElementById('minParagraphs');
+    const maxParagraphs = document.getElementById('maxParagraphs');
+    const fixedPageSize = document.getElementById('fixedPageSize');
     
     // 导航栏设置元素
     const navCheckboxes = document.querySelectorAll('.nav-tabs-settings input[type="checkbox"]');
@@ -20,10 +30,48 @@ document.addEventListener('DOMContentLoaded', function() {
         saveSettings('defaultColor', color);
     });
 
-    // 最多显示段落数
+    // 分页模式切换
+    paginationMode.addEventListener('change', function() {
+        const mode = this.value;
+        saveSettings('paginationMode', mode);
+        
+        // 显示/隐藏对应的设置项
+        if (mode === 'smart') {
+            smartPaginationSettings.style.display = 'block';
+            fixedPaginationSettings.style.display = 'none';
+        } else {
+            smartPaginationSettings.style.display = 'none';
+            fixedPaginationSettings.style.display = 'block';
+        }
+        
+        showNotification('分页模式已切换，刷新阅读页面生效');
+    });
+
+    // 智能分页参数
+    targetChars.addEventListener('change', function() {
+        savePaginationConfig();
+    });
+    
+    minChars.addEventListener('change', function() {
+        savePaginationConfig();
+    });
+    
+    maxChars.addEventListener('change', function() {
+        savePaginationConfig();
+    });
+    
+    minParagraphs.addEventListener('change', function() {
+        savePaginationConfig();
+    });
+    
     maxParagraphs.addEventListener('change', function() {
+        savePaginationConfig();
+    });
+
+    // 固定段落数
+    fixedPageSize.addEventListener('change', function() {
         const value = this.value;
-        saveSettings('maxParagraphs', value);
+        saveSettings('fixedPageSize', value);
         showNotification('段落显示设置已保存，刷新阅读页面生效');
     });
 
@@ -61,15 +109,74 @@ document.addEventListener('DOMContentLoaded', function() {
 // 加载设置
 function loadSettings() {
     const defaultColor = localStorage.getItem('defaultColor') || '#28a745';
-    const maxParagraphs = localStorage.getItem('maxParagraphs') || '8';
     const autoSave = localStorage.getItem('autoSave') !== 'false';
+    
+    // 分页设置
+    const paginationMode = localStorage.getItem('paginationMode') || 'smart';
+    const paginationConfig = JSON.parse(localStorage.getItem('paginationConfig') || '{}');
+    const defaultConfig = {
+        targetChars: 4000,
+        minChars: 2000,
+        maxChars: 8000,
+        minParagraphs: 2,
+        maxParagraphs: 15
+    };
+    const config = { ...defaultConfig, ...paginationConfig };
+    const fixedPageSize = localStorage.getItem('fixedPageSize') || '8';
 
     document.getElementById('defaultColor').value = defaultColor;
-    document.getElementById('maxParagraphs').value = maxParagraphs;
     document.getElementById('autoSave').checked = autoSave;
+    
+    // 加载分页设置
+    document.getElementById('paginationMode').value = paginationMode;
+    document.getElementById('targetChars').value = config.targetChars;
+    document.getElementById('minChars').value = config.minChars;
+    document.getElementById('maxChars').value = config.maxChars;
+    document.getElementById('minParagraphs').value = config.minParagraphs;
+    document.getElementById('maxParagraphs').value = config.maxParagraphs;
+    document.getElementById('fixedPageSize').value = fixedPageSize;
+    
+    // 显示/隐藏对应的设置项
+    const smartPaginationSettings = document.getElementById('smartPaginationSettings');
+    const fixedPaginationSettings = document.getElementById('fixedPaginationSettings');
+    if (paginationMode === 'smart') {
+        smartPaginationSettings.style.display = 'block';
+        fixedPaginationSettings.style.display = 'none';
+    } else {
+        smartPaginationSettings.style.display = 'none';
+        fixedPaginationSettings.style.display = 'block';
+    }
     
     // 加载导航栏设置
     loadNavSettings();
+}
+
+// 保存智能分页配置
+function savePaginationConfig() {
+    const config = {
+        targetChars: parseInt(document.getElementById('targetChars').value),
+        minChars: parseInt(document.getElementById('minChars').value),
+        maxChars: parseInt(document.getElementById('maxChars').value),
+        minParagraphs: parseInt(document.getElementById('minParagraphs').value),
+        maxParagraphs: parseInt(document.getElementById('maxParagraphs').value)
+    };
+    
+    // 验证参数合理性
+    if (config.minChars >= config.targetChars) {
+        showNotification('最少字符数应小于目标字符数', 'error');
+        return;
+    }
+    if (config.targetChars >= config.maxChars) {
+        showNotification('目标字符数应小于最多字符数', 'error');
+        return;
+    }
+    if (config.minParagraphs >= config.maxParagraphs) {
+        showNotification('最少段落数应小于最多段落数', 'error');
+        return;
+    }
+    
+    localStorage.setItem('paginationConfig', JSON.stringify(config));
+    showNotification('智能分页参数已保存，刷新阅读页面生效');
 }
 
 // 加载导航栏设置
@@ -125,7 +232,15 @@ function saveSettings(key, value) {
 function clearCache() {
     try {
         // 只清除特定的缓存项，保留设置
-        const keysToKeep = ['defaultColor', 'maxParagraphs', 'autoSave', 'navTabs'];
+        const keysToKeep = [
+            'defaultColor', 
+            'autoSave', 
+            'navTabs', 
+            'paginationMode', 
+            'paginationConfig', 
+            'fixedPageSize',
+            'controlsDrawerState'  // 保留抽屉状态
+        ];
         const allKeys = Object.keys(localStorage);
         
         allKeys.forEach(key => {
