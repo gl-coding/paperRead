@@ -9,6 +9,8 @@
     const defaults = {
         reading: true,
         articles: true,
+        grammar: true,
+        grammar_articles: true,
         words: true,
         dictation: true,
         profile: true,
@@ -22,6 +24,8 @@
     const navMapping = {
         'reading': 'index.html',
         'articles': 'articles_manager.html',
+        'grammar': 'grammar.html',
+        'grammar_articles': 'grammar_articles.html',
         'words': 'words_graph.html',
         'dictation': 'dictation.html',
         'profile': 'profile.html',

@@ -38,8 +38,10 @@ let catalogData = {}; // 存储文章目录数据 {category: [articles]}
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
 const wordList = document.getElementById('wordList');
-const wordCount = document.getElementById('wordCount');
-const uniqueWordCount = document.getElementById('uniqueWordCount');
+// const wordCount = document.getElementById('wordCount');  // 已移除统计元素
+// const uniqueWordCount = document.getElementById('uniqueWordCount');  // 已移除统计元素
+const wordCount = null;  // 统计元素已从页面移除
+const uniqueWordCount = null;  // 统计元素已从页面移除
 const translateBtn = document.getElementById('translateBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
 const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');
@@ -889,9 +891,9 @@ function updateWordList() {
 
 // 更新统计信息
 function updateStats() {
-    // 英语语法页面仍有这些统计元素，所以需要更新
+    // 英语语法页面已移除统计元素，直接返回
     if (!wordCount || !uniqueWordCount) {
-        console.log('统计元素不存在，跳过更新');
+        // 统计元素已从页面移除，不需要更新
         return;
     }
     
@@ -1542,9 +1544,16 @@ async function loadCatalog() {
         // 渲染目录
         displayCatalog();
         
+        // 返回第一篇文章的ID（用于默认加载）
+        if (articles.length > 0) {
+            return articles[0].id;
+        }
+        return null;
+        
     } catch (error) {
         console.error('加载目录失败:', error);
         catalogTree.innerHTML = '<p class="empty-state">加载失败，请刷新重试</p>';
+        return null;
     }
 }
 
@@ -1609,7 +1618,24 @@ function toggleCategory(categoryId) {
     }
 }
 
-// 选择文章
+// 通过ID加载文章（不依赖事件对象）
+async function loadArticleById(articleId) {
+    // 更新当前文章ID
+    currentArticleId = articleId;
+    
+    // 更新活动状态
+    document.querySelectorAll('.article-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.onclick && item.onclick.toString().includes(articleId)) {
+            item.classList.add('active');
+        }
+    });
+    
+    // 加载文章内容
+    await loadArticleContent(articleId, 1);
+}
+
+// 选择文章（从点击事件触发）
 function selectArticle(articleId) {
     // 更新当前文章ID
     currentArticleId = articleId;
@@ -1618,7 +1644,9 @@ function selectArticle(articleId) {
     document.querySelectorAll('.article-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.article-item').classList.add('active');
+    if (event && event.target) {
+        event.target.closest('.article-item').classList.add('active');
+    }
     
     // 加载文章内容
     loadArticleContent(articleId, 1);
@@ -1643,10 +1671,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 初始禁用翻译按钮
     translateBtn.disabled = true;
     
-    // 加载文章目录
-    await loadCatalog();
+    // 加载文章目录，获取第一篇文章的ID
+    const firstArticleId = await loadCatalog();
     
     // 从URL加载文章
     await loadArticleFromURL();
+    
+    // 如果URL中没有指定文章，且有第一篇文章，则自动加载第一篇文章
+    if (!currentArticleId && firstArticleId) {
+        console.log('自动加载第一篇文章:', firstArticleId);
+        await loadArticleById(firstArticleId);
+    }
 });
 

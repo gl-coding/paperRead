@@ -178,7 +178,8 @@ body {
 }
 
 
-/* 文章统计信息 */
+/* 文章统计信息 - 已移除，保留样式以备后用 */
+/* 
 .article-stats {
     display: flex;
     align-items: center;
@@ -200,6 +201,7 @@ body {
     color: #4caf50;
     font-weight: normal !important;
 }
+*/
 
 .article-display {
     padding: 20px;

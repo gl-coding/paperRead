@@ -80,6 +80,8 @@ function loadNavSettings() {
     const defaults = {
         reading: true,
         articles: true,
+        grammar: true,
+        grammar_articles: true,
         words: true,
         dictation: true,
         profile: true,
