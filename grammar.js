@@ -55,6 +55,10 @@ const sentenceAnnotationModeToggle = document.getElementById('sentenceAnnotation
 const translationModeToggle = document.getElementById('translationModeToggle');
 const colorPicker = document.getElementById('colorPicker');
 const colorBtns = document.querySelectorAll('.color-btn');
+
+// 抽屉控制元素
+const controlsDrawer = document.getElementById('controlsDrawer');
+const drawerToggle = document.getElementById('drawerToggle');
 const filterRadios = document.querySelectorAll('input[name="filter"]');
 const paginationControls = document.getElementById('paginationControls');
 const prevPageBtn = document.getElementById('prevPageBtn');
@@ -1708,6 +1712,61 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ==================== 控制面板抽屉功能 ====================
+
+// 切换抽屉展开/收起状态
+function toggleDrawer() {
+    if (!controlsDrawer) return;
+    
+    const isCollapsed = controlsDrawer.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        // 展开抽屉
+        controlsDrawer.classList.remove('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '收起控制面板';
+        }
+        // 保存状态到 localStorage
+        localStorage.setItem('controlsDrawerState', 'expanded');
+    } else {
+        // 收起抽屉
+        controlsDrawer.classList.add('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '展开控制面板';
+        }
+        // 保存状态到 localStorage
+        localStorage.setItem('controlsDrawerState', 'collapsed');
+    }
+}
+
+// 初始化抽屉状态
+function initDrawerState() {
+    if (!controlsDrawer) return;
+    
+    // 从 localStorage 读取保存的状态
+    const savedState = localStorage.getItem('controlsDrawerState');
+    
+    if (savedState === 'collapsed') {
+        controlsDrawer.classList.add('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '展开控制面板';
+        }
+    } else {
+        // 默认展开
+        controlsDrawer.classList.remove('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '收起控制面板';
+        }
+    }
+}
+
+// 绑定抽屉切换按钮事件
+if (drawerToggle) {
+    drawerToggle.addEventListener('click', toggleDrawer);
+}
+
+// ==================== 目录相关 ====================
+
 // 刷新目录按钮事件
 if (refreshCatalog) {
     refreshCatalog.addEventListener('click', loadCatalog);
@@ -1716,6 +1775,9 @@ if (refreshCatalog) {
 // 页面加载时的初始化
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('英语语法页面已加载');
+    
+    // 初始化抽屉状态
+    initDrawerState();
     
     // 初始禁用翻译按钮（按钮已移除）
     // translateBtn.disabled = true;

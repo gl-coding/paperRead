@@ -73,22 +73,34 @@
             <div class="article-section">
                 <div class="article-header">
                     <h2 id="articleTitle">文章内容</h2>
-                    <div class="controls">
-                        <button id="clearAllBtn" class="btn btn-danger">清除格式</button>
-                        <div class="mode-toggles-row">
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="annotationModeToggle">
-                                <span class="toggle-label">单词标注</span>
-                            </label>
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="sentenceAnnotationModeToggle">
-                                <span class="toggle-label">句子标注</span>
-                            </label>
-                            <label class="mode-toggle">
-                                <input type="checkbox" id="translationModeToggle">
-                                <span class="toggle-label">翻译模式</span>
-                            </label>
+                    
+                    <!-- 控制面板抽屉 -->
+                    <div class="controls-drawer" id="controlsDrawer">
+                        <!-- 控制按钮内容 -->
+                        <div class="controls-content">
+                            <div class="controls">
+                                <button id="clearAllBtn" class="btn btn-danger">清除格式</button>
+                                <div class="mode-toggles-row">
+                                    <label class="mode-toggle">
+                                        <input type="checkbox" id="annotationModeToggle">
+                                        <span class="toggle-label">单词标注</span>
+                                    </label>
+                                    <label class="mode-toggle">
+                                        <input type="checkbox" id="sentenceAnnotationModeToggle">
+                                        <span class="toggle-label">句子标注</span>
+                                    </label>
+                                    <label class="mode-toggle">
+                                        <input type="checkbox" id="translationModeToggle">
+                                        <span class="toggle-label">翻译模式</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- 展开/收起按钮 - 放在右侧 -->
+                        <button class="drawer-toggle" id="drawerToggle" title="收起控制面板">
+                            <span class="toggle-icon">❯</span>
+                        </button>
                     </div>
                 </div>
                 <!-- 颜色选择器 -->

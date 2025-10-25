@@ -70,6 +70,76 @@ body {
     flex-wrap: wrap;
 }
 
+/* 控制面板抽屉样式 - 优化性能版本 */
+.controls-drawer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: visible;
+}
+
+.drawer-toggle {
+    width: 36px;
+    height: 36px;
+    border: 2px solid #667eea;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    flex-shrink: 0;
+}
+
+.drawer-toggle:hover {
+    background: #667eea;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.drawer-toggle:hover .toggle-icon {
+    color: white;
+}
+
+.toggle-icon {
+    color: #667eea;
+    font-size: 18px;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+/* 控制内容容器 - 使用 transform 实现流畅动画（从右侧收起） */
+.controls-content {
+    overflow: hidden;
+    white-space: nowrap;
+    will-change: transform, opacity;
+    transform-origin: right center;  /* 从右侧收起 */
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scaleX(1) translateX(0);
+    opacity: 1;
+}
+
+.controls-drawer.collapsed .controls-content {
+    transform: scaleX(0) translateX(20px);  /* 向右收起 */
+    opacity: 0;
+    pointer-events: none;
+}
+
+.controls-drawer.collapsed .toggle-icon {
+    transform: rotate(180deg);  /* 收起时箭头旋转为 ❮ */
+}
+
+/* 确保内部控制元素在动画时不变形 */
+.controls-content .controls {
+    display: inline-flex;
+    min-width: max-content;
+}
+
 .btn {
     padding: 10px 20px;
     border: none;
@@ -1059,6 +1129,34 @@ body {
         flex-direction: column;
         gap: 15px;
         align-items: flex-start;
+    }
+    
+    /* 移动端抽屉样式调整 */
+    .controls-drawer {
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+    
+    .drawer-toggle {
+        flex-shrink: 0;
+    }
+    
+    .controls-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .controls-content .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        white-space: normal;
+    }
+    
+    .mode-toggles-row {
+        flex-direction: column;
+        gap: 10px;
     }
     
     .word-filter {

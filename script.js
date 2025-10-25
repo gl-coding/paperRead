@@ -34,18 +34,23 @@ let currentParagraphCount = 0; // 当前文章段落总数
 
 // DOM元素
 const articleDisplay = document.getElementById('articleDisplay');
+const articleTitle = document.getElementById('articleTitle');
 const wordList = document.getElementById('wordList');
 const wordCount = document.getElementById('wordCount');
 const uniqueWordCount = document.getElementById('uniqueWordCount');
 const translateBtn = document.getElementById('translateBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
-const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');
-const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');
+// const toggleAnnotationsBtn = document.getElementById('toggleAnnotationsBtn');  // 已移除
+// const toggleTranslationsBtn = document.getElementById('toggleTranslationsBtn');  // 已移除
 const annotationModeToggle = document.getElementById('annotationModeToggle');
 const sentenceAnnotationModeToggle = document.getElementById('sentenceAnnotationModeToggle');
 const translationModeToggle = document.getElementById('translationModeToggle');
 const colorPicker = document.getElementById('colorPicker');
 const colorBtns = document.querySelectorAll('.color-btn');
+
+// 抽屉控制元素
+const controlsDrawer = document.getElementById('controlsDrawer');
+const drawerToggle = document.getElementById('drawerToggle');
 const filterRadios = document.querySelectorAll('input[name="filter"]');
 const paginationControls = document.getElementById('paginationControls');
 const prevPageBtn = document.getElementById('prevPageBtn');
@@ -80,8 +85,8 @@ Looking forward, the future of artificial intelligence appears boundless. As tec
 // 事件监听器
 translateBtn.addEventListener('click', handleTranslate);
 clearAllBtn.addEventListener('click', handleClearAll);
-toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);
-toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);
+// toggleAnnotationsBtn.addEventListener('click', toggleAnnotationsVisibility);  // 已移除按钮
+// toggleTranslationsBtn.addEventListener('click', toggleTranslationsVisibility);  // 已移除按钮
 annotationModeToggle.addEventListener('change', toggleAnnotationMode);
 sentenceAnnotationModeToggle.addEventListener('change', toggleSentenceAnnotationMode);
 translationModeToggle.addEventListener('change', toggleTranslationMode);
@@ -478,11 +483,11 @@ function toggleAnnotationsVisibility() {
     if (annotationsHidden) {
         // 隐藏标注
         articleDisplay.classList.add('hide-annotations');
-        toggleAnnotationsBtn.textContent = '显示标注';
+        // toggleAnnotationsBtn.textContent = '显示标注';  // 按钮已移除
     } else {
         // 显示标注
         articleDisplay.classList.remove('hide-annotations');
-        toggleAnnotationsBtn.textContent = '隐藏标注';
+        // toggleAnnotationsBtn.textContent = '隐藏标注';  // 按钮已移除
     }
 }
 
@@ -493,11 +498,11 @@ function toggleTranslationsVisibility() {
     if (translationsHidden) {
         // 隐藏翻译
         articleDisplay.classList.add('hide-translations');
-        toggleTranslationsBtn.textContent = '显示翻译';
+        // toggleTranslationsBtn.textContent = '显示翻译';  // 按钮已移除
     } else {
         // 显示翻译
         articleDisplay.classList.remove('hide-translations');
-        toggleTranslationsBtn.textContent = '隐藏翻译';
+        // toggleTranslationsBtn.textContent = '隐藏翻译';  // 按钮已移除
     }
 }
 
@@ -1153,6 +1158,11 @@ async function loadArticleFromURL() {
                 currentArticleId = article.id;
                 currentParagraphCount = article.paragraph_count || 0;
                 
+                // 更新文章标题
+                if (articleTitle && article.title) {
+                    articleTitle.textContent = article.title;
+                }
+                
                 // 获取上次阅读的页码
                 const savedPage = getReadingProgress(articleId);
                 
@@ -1505,8 +1515,65 @@ function stopReading() {
     updateReadingList();
 }
 
+// ==================== 控制面板抽屉功能 ====================
+
+// 切换抽屉展开/收起状态
+function toggleDrawer() {
+    if (!controlsDrawer) return;
+    
+    const isCollapsed = controlsDrawer.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        // 展开抽屉
+        controlsDrawer.classList.remove('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '收起控制面板';
+        }
+        // 保存状态到 localStorage
+        localStorage.setItem('controlsDrawerState', 'expanded');
+    } else {
+        // 收起抽屉
+        controlsDrawer.classList.add('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '展开控制面板';
+        }
+        // 保存状态到 localStorage
+        localStorage.setItem('controlsDrawerState', 'collapsed');
+    }
+}
+
+// 初始化抽屉状态
+function initDrawerState() {
+    if (!controlsDrawer) return;
+    
+    // 从 localStorage 读取保存的状态
+    const savedState = localStorage.getItem('controlsDrawerState');
+    
+    if (savedState === 'collapsed') {
+        controlsDrawer.classList.add('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '展开控制面板';
+        }
+    } else {
+        // 默认展开
+        controlsDrawer.classList.remove('collapsed');
+        if (drawerToggle) {
+            drawerToggle.title = '收起控制面板';
+        }
+    }
+}
+
+// 绑定抽屉切换按钮事件
+if (drawerToggle) {
+    drawerToggle.addEventListener('click', toggleDrawer);
+}
+
+// ==================== 页面初始化 ====================
+
 // 页面加载时的初始化
 document.addEventListener('DOMContentLoaded', async () => {
+    // 初始化抽屉状态
+    initDrawerState();
     console.log('英文文章阅读器已加载');
     
     // 初始禁用翻译按钮
